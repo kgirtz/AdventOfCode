@@ -34,16 +34,19 @@ class Point(typing.NamedTuple):
         return Point(self.x + 1, self.y + 1)
 
     def is_left_of(self, pt: 'Point') -> bool:
-        return pt.left() == self
+        return self.right() == pt
 
     def is_right_of(self, pt: 'Point') -> bool:
-        return pt.right() == self
+        return self.left() == pt
 
     def is_above(self, pt: 'Point') -> bool:
-        return pt.above() == self
+        return self.below() == pt
 
     def is_below(self, pt: 'Point') -> bool:
-        return pt.below() == self
+        return self.above() == pt
+
+    def is_adjacent_to(self, pt: 'Point') -> bool:
+        return self.is_above(pt) or self.is_below(pt) or self.is_left_of(pt) or self.is_right_of(pt)
 
     def neighbors(self, *, diagonals: bool = False) -> set['Point']:
         pts: set[Point] = {
