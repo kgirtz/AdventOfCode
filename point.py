@@ -9,10 +9,6 @@ class Point(typing.NamedTuple):
     def __str__(self) -> str:
         return f'({self.x}, {self.y})'
 
-    @staticmethod
-    def origin() -> 'Point':
-        return Point(0, 0)
-
     def left(self) -> 'Point':
         return Point(self.x - 1, self.y)
 
@@ -50,17 +46,34 @@ class Point(typing.NamedTuple):
         return pt.below() == self
 
     def neighbors(self, *, diagonals: bool = False) -> set['Point']:
-        pts: set[Point] = {self.above(), self.below(), self.left(), self.right()}
+        pts: set[Point] = {
+            self.above(),
+            self.below(),
+            self.left(),
+            self.right()
+                           }
+
         if diagonals:
-            pts |= {self.up_right(), self.up_left(), self.down_right(), self.down_left()}
+            pts |= {
+                self.up_right(),
+                self.up_left(),
+                self.down_right(),
+                self.down_left()
+                    }
+
         return pts
 
     def distance(self, start: 'Point' = None) -> float:
         if start is None:
-            start = self.origin()
+            start = ORIGIN
+
         return math.sqrt((self.x - start.x) ** 2 + (self.y - start.y) ** 2)
 
     def manhattan_distance(self, start: 'Point' = None) -> int:
         if start is None:
-            start = self.origin()
+            start = ORIGIN
+
         return abs(self.x - start.x) + abs(self.y - start.y)
+
+
+ORIGIN: Point = Point(0, 0)
