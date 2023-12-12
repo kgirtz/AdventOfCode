@@ -2,6 +2,7 @@ import pathlib
 import sys
 import os
 import dataclasses
+from typing import Sequence
 
 
 @dataclasses.dataclass
@@ -28,7 +29,7 @@ def parse(puzzle_input):
     return cards
 
 
-def payout(cards: list[Card]) -> list[int]:
+def payout(cards: Sequence[Card]) -> list[int]:
     card_counts: list[int] = [1] * len(cards)
     for i, card in enumerate(cards):
         for j in range(card.num_matches()):

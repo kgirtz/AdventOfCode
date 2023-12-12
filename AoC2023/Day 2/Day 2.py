@@ -29,11 +29,11 @@ class Game:
     id: int = 0
     rounds: list[Handful] = dataclasses.field(default_factory=list)
 
-    def cube_colors(self) -> set[str]:
+    def cube_colors(self) -> list[str]:
         colors: set[str] = set()
         for rd in self.rounds:
             colors |= rd.cubes.keys()
-        return colors
+        return list(colors)
 
 
 def parse(puzzle_input):

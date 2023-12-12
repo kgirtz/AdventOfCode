@@ -2,9 +2,10 @@ import pathlib
 import sys
 import os
 from point import Point
+from typing import Iterable, Sequence
 
 
-def expand_galaxies(galaxies: list[Point], expansion_rate: int) -> list[Point]:
+def expand_galaxies(galaxies: Iterable[Point], expansion_rate: int) -> list[Point]:
     galaxy_rows: set[int] = {galaxy.y for galaxy in galaxies}
     galaxy_columns: set[int] = {galaxy.x for galaxy in galaxies}
     expansion_rows: set[int] = {r for r in range(max(galaxy_rows)) if r not in galaxy_rows}
@@ -18,7 +19,7 @@ def expand_galaxies(galaxies: list[Point], expansion_rate: int) -> list[Point]:
     return expanded
 
 
-def sum_of_shortest_paths(galaxies: list[Point]) -> int:
+def sum_of_shortest_paths(galaxies: Sequence[Point]) -> int:
     path_sum: int = 0
     for i, source in enumerate(galaxies[:-1]):
         for j, destination in enumerate(galaxies[i + 1:]):

@@ -1,7 +1,7 @@
 import pathlib
 import sys
 import os
-import typing
+from typing import NamedTuple, Sequence
 
 
 def parse(puzzle_input):
@@ -9,7 +9,7 @@ def parse(puzzle_input):
     return puzzle_input.split('\n')
 
 
-class Gear(typing.NamedTuple):
+class Gear(NamedTuple):
     x: int
     y: int
     num1: int
@@ -20,8 +20,8 @@ class Gear(typing.NamedTuple):
 
 
 class Schematic:
-    def __init__(self, schematic: list[str]) -> None:
-        self.schematic: list[str] = schematic
+    def __init__(self, schematic: Sequence[str]) -> None:
+        self.schematic: list[str] = list(schematic)
         self.part_numbers: list[int] = []
         self.gears: set[Gear] = set()
         self.height: int = len(schematic)

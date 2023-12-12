@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+from typing import Iterable
 
 
 class Hand:
@@ -81,7 +82,7 @@ def parse(puzzle_input):
     return hands
 
 
-def total_winnings(hands: list[tuple[Hand, int]]) -> int:
+def total_winnings(hands: Iterable[tuple[Hand, int]]) -> int:
     return sum(rank * bid for rank, (_, bid) in enumerate(sorted(hands), 1))
 
 
@@ -92,9 +93,7 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    hands: list[tuple[JokerHand, int]] = [(JokerHand(h.hand), bid) for h, bid in data]
-    return total_winnings(hands)
-    # 250414800 = too high
+    return total_winnings((JokerHand(h.hand), bid) for h, bid in data)
 
 
 def solve(puzzle_input):

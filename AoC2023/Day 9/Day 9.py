@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+from typing import Sequence
 
 
 def parse(puzzle_input):
@@ -8,7 +9,7 @@ def parse(puzzle_input):
     return [[int(value) for value in line.split()] for line in puzzle_input.split('\n')]
 
 
-def next_value(history: list[int]) -> int:
+def next_value(history: Sequence[int]) -> int:
     if len(set(history)) == 1:
         return history[-1]
 
@@ -16,7 +17,7 @@ def next_value(history: list[int]) -> int:
     return history[-1] + next_value(delta)
 
 
-def previous_value(history: list[int]) -> int:
+def previous_value(history: Sequence[int]) -> int:
     if len(set(history)) == 1:
         return history[0]
 

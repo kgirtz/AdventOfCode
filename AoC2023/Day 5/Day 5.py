@@ -1,10 +1,10 @@
 import pathlib
 import sys
 import os
-import typing
+from typing import Iterable, NamedTuple
 
 
-class Range(typing.NamedTuple):
+class Range(NamedTuple):
     dst_start: int
     src_start: int
     length: int
@@ -40,7 +40,7 @@ def collapse_ranges(pre: Range, post: list[Range]) -> list[Range]:
 
 
 class Map:
-    def __init__(self, source: str, destination: str, ranges: list[str]) -> None:
+    def __init__(self, source: str, destination: str, ranges: Iterable[str]) -> None:
         self.source: str = source
         self.destination: str = destination
         self.ranges: list[Range] = [Range(*(int(n) for n in r.split())) for r in ranges]

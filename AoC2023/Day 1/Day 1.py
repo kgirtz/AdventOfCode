@@ -12,6 +12,7 @@ DIGIT_WORDS: dict[str, str] = {'one': '1',
                                  'seven': '7',
                                  'eight': '8',
                                  'nine': '9'}
+
 DIGIT_WORDS_REV: dict[str, str] = {word[::-1]: digit for word, digit in DIGIT_WORDS.items()}
 
 
