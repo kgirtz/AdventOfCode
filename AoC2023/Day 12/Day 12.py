@@ -1,16 +1,44 @@
 import pathlib
 import sys
 import os
+import re
+from typing import Sequence
 
 
 def parse(puzzle_input):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    data: list[tuple[list[str], list[int]]] = []
+    for line in puzzle_input.split('\n'):
+        springs, groups = line.split()
+        data.append((re.findall(r'[?#]+', springs), [int(g) for g in groups.split(',')]))
+    return data
+
+
+def possible_positions(spring: str, chunks: Sequence[int]) -> int:
+    if len(spring) < chunk:
+        return 0
+    if len(spring) == chunk or spring.count('#') == chunk:
+        return 1
+
+
+def possible_arrangements(springs: Sequence[str], groups: Sequence[int]) -> int:
+    if not springs or not groups:
+        return 0
+
+    if len(springs) == len(groups):
+        return max(len(springs[0]) - groups[0] + 1, 0) * possible_arrangements(springs[1:], groups[1:])
+
+    if len(springs) < len(groups):
+
+
+
+    return 0
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    print(data)
+    return sum(possible_arrangements(springs, groups) for springs, groups in data)
 
 
 def part2(data):
@@ -31,7 +59,7 @@ def solve(puzzle_input):
 if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 21
     PART2_TEST_ANSWER = None
 
     file = pathlib.Path(DIR + 'part1_test.txt')
