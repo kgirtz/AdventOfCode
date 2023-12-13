@@ -60,7 +60,37 @@ class Pattern:
         print('FAILED TO FIND LINE')
 
     def fix_smudge(self) -> None:
-        pass
+        for c1 in range(self.width - 1):
+            for c2 in range(c1 + 1, self.width, 2):
+                col1: set[int] = self.columns[c1]
+                col2: set[int] = self.columns[c2]
+                if abs(len(col1) - len(col2)) == 1:
+                    bigger, smaller = (col1, col2) if len(col1) > len(col2) else (col2, col1)
+                    extra: int = (bigger - smaller).pop()
+                    smaller.add(extra)
+                    midpoint: int = (c2 - c1) // 2 + c1
+                    if self.valid_vertical_reflecting_line(midpoint):
+                        self.reflection_direction = self.VERTICAL
+                        self.reflection_line = midpoint
+                        return
+                    smaller.remove(extra)
+
+        for r1 in range(self.height - 1):
+            for r2 in range(r1 + 1, self.height, 2):
+                row1: set[int] = self.rows[r1]
+                row2: set[int] = self.rows[r2]
+                if abs(len(row1) - len(row2)) == 1:
+                    bigger, smaller = (row1, row2) if len(row1) > len(row2) else (row2, row1)
+                    extra = (bigger - smaller).pop()
+                    smaller.add(extra)
+                    midpoint = (r2 - r1) // 2 + r1
+                    if self.valid_horizontal_reflecting_line(midpoint):
+                        self.reflection_direction = self.HORIZONTAL
+                        self.reflection_line = midpoint
+                        return
+                    smaller.remove(extra)
+
+        print('FAILED TO FIND SMUDGE')
 
 
 def parse(puzzle_input):
@@ -71,7 +101,7 @@ def parse(puzzle_input):
 def part1(data):
     """Solve part 1"""
     return sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.VERTICAL) + \
-            100 * sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.HORIZONTAL)
+        100 * sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.HORIZONTAL)
 
 
 def part2(data):
@@ -79,8 +109,8 @@ def part2(data):
     for pattern in data:
         pattern.fix_smudge()
 
-    return sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == 'VERTICAL') + \
-        100 * sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == 'HORIZONTAL')
+    return sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.VERTICAL) + \
+        100 * sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.HORIZONTAL)
 
 
 def solve(puzzle_input):
