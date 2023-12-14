@@ -65,6 +65,7 @@ class Platform:
             resting_rocks.add(Point(x, rock.y))
 
     def find_repeat_state(self) -> (int, int):
+        start_state: list[Point] = list(self.round_rocks)
         seen_states: dict[tuple[Point, ...], int] = {tuple(self.round_rocks): 0}
         i: int = 0
         while True:
@@ -73,11 +74,14 @@ class Platform:
 
             state: tuple[Point, ...] = tuple(self.round_rocks)
             if state in seen_states:
-                setup_length: int = seen_states[state]
-                cycle_length: int = i - setup_length
-                return setup_length, cycle_length
+                break
 
             seen_states[state] = i
+
+        setup_length: int = seen_states[state]
+        cycle_length: int = i - setup_length
+        self.round_rocks = start_state
+        return setup_length, cycle_length
 
     def cycle(self, num_cycles: int = 1) -> None:
         for i in range(num_cycles):
@@ -86,10 +90,8 @@ class Platform:
             self.tilt_south()
             self.tilt_east()
 
-    def load(self, rock: Point) -> int:
-        if rock not in self.round_rocks:
-            return 0
-        return self.height - rock.y
+    def total_load_on_north_beam(self) -> int:
+        return sum(self.height - rock.y for rock in self.round_rocks)
 
 
 def parse(puzzle_input):
@@ -100,7 +102,7 @@ def parse(puzzle_input):
 def part1(data):
     """Solve part 1"""
     data.tilt_north()
-    return sum(data.load(rock) for rock in data.round_rocks)
+    return data.total_load_on_north_beam()
 
 
 def part2(data):
@@ -109,8 +111,8 @@ def part2(data):
 
     setup, cycle = data.find_repeat_state()
     data.cycle(setup + (total_cycles - setup) % cycle)
-    print(sum(data.load(rock) for rock in data.round_rocks))
-    return sum(data.load(rock) for rock in data.round_rocks)
+
+    return data.total_load_on_north_beam()
 
 
 def solve(puzzle_input):
