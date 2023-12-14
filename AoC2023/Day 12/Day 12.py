@@ -2,6 +2,7 @@ import pathlib
 import sys
 import os
 import re
+import math
 from typing import Sequence
 
 
@@ -72,7 +73,7 @@ def parse(puzzle_input):
     return 0"""
 
 
-def match_chunk(line: str, groups: Sequence[int]) -> (bool, str, list):
+"""def match_chunk(line: str, groups: Sequence[int]) -> (bool, str, list):
     chunk: int = groups[0]
     masked_chunk = re.match(r'\?[?#]*', line)
     if masked_chunk is not None and len(masked_chunk.group(0)) == chunk and '#' in masked_chunk.group(0):
@@ -84,10 +85,10 @@ def match_chunk(line: str, groups: Sequence[int]) -> (bool, str, list):
             return True, '#', []
         return True, line[chunk + 1:].lstrip('.'), groups[1:]
     
-    return False, line, groups
+    return False, line, groups"""
 
 
-def possible_arrangements(line: str, groups: Sequence[int]) -> int:
+"""def possible_arrangements(line: str, groups: Sequence[int]) -> int:
     line = line.strip('.')
     
     while True:
@@ -98,14 +99,14 @@ def possible_arrangements(line: str, groups: Sequence[int]) -> int:
             return 0
         
         # Some shortcuts when things get simple
-        """if len(groups) == 1:
+        if len(groups) == 1:
             if '.' not in line:
                 if '#' in line:
                     first: int = line.find('#')
                     last: int = len(line) - 1 - line[::-1].find('#')
                     line = line[last - group:first + group]
                 else:
-                    return len(line) - groups[0] + 1"""
+                    return len(line) - groups[0] + 1
                 
         matched, line, groups = match_chunk(line, groups)
         if matched:
@@ -116,24 +117,84 @@ def possible_arrangements(line: str, groups: Sequence[int]) -> int:
         if matched:
             continue
         
-        """chunk: int = groups[-1]
+        chunk: int = groups[-1]
         if line.endswith('#') or '#' * chunk in line[-2 * chunk:]:
             line = line.rstrip('?.')
             if len(line) < chunk or '.' in line[-chunk:] or (len(line) > chunk and line[-chunk - 1] == '#'):
                 return 0
             line = line[:-chunk - 1].rstrip('.')
             groups = groups[:-1]
-            continue"""
+            continue
             
         # Add additional cases to pare tree
         break
     
     # line starts and ends with '?'
-    return possible_arrangements(line[1:], groups) + possible_arrangements('#' + line[1:], groups)
+    return possible_arrangements(line[1:], groups) + possible_arrangements('#' + line[1:], groups)"""
 
 
-def unfold(springs: str, groups: Sequence[int]) -> (str, list):
-    print(f'unfold({springs}, {groups})')
+def combos(chunk_len: int, groups: Sequence[int]) -> int:
+    extra_space: int = chunk_len - (sum(groups) + len(groups) - 1)
+    if extra_space < 0:
+        return 0
+    
+    # print(chunk_len, groups, end='')
+    # print(math.factorial(len(groups) + extra_space) // math.factorial(len(groups)) // math.factorial(extra_space))
+    return math.factorial(len(groups) + extra_space) // math.factorial(len(groups)) // math.factorial(extra_space)
+
+
+def possible_arrangements(line: str, groups: Sequence[int]) -> int:
+    if not groups:
+        return 0 if '#' in line else 1
+    
+    line = line.lstrip('.')
+    if not line:
+        return 0
+    
+    # if len([chunk for chunk in re.findall(r'[?#]+', line) if '#' in chunk]) > len(groups):
+    #    return 0
+
+    front_chunk: str = line.split('.', 1)[0]
+
+    if '#' in front_chunk:
+        if len(front_chunk) < groups[0]:
+            return 0
+
+        if len(front_chunk) == groups[0]:
+            return possible_arrangements(line[groups[0] + 1:], groups[1:])
+
+        if len(front_chunk) == groups[0] + 1 and not (front_chunk.startswith('#') and front_chunk.endswith('#')):
+            return possible_arrangements(line[groups[0] + 2:], groups[1:])
+
+        # len(front_chunk) > groups[0]
+        if front_chunk.startswith('#'):
+            if front_chunk[groups[0]] == '#':
+                return 0
+            return possible_arrangements(line[groups[0] + 1:], groups[1:])
+
+        if front_chunk[groups[0]] == '#':
+            return possible_arrangements(line[1:], groups)
+
+        # line starts with '?'
+        m: int = len(front_chunk) // 2 + 1
+        while front_chunk[m] != '?':
+            m -= 1
+        return possible_arrangements(line[:m] + '.' + line[m + 1:], groups) + possible_arrangements(line[:m] + '#' + line[m + 1:], groups)
+
+    else:
+        if len(front_chunk) < groups[0]:
+            return possible_arrangements(line[len(front_chunk):], groups)
+
+        arrangements: int = possible_arrangements(line[len(front_chunk):], groups)
+        for i, group in enumerate(groups):
+            if sum(groups[:i + 1]) + i > len(front_chunk):
+                break
+            arrangements += combos(len(front_chunk), groups[:i + 1]) * possible_arrangements(line[len(front_chunk):], groups[i + 1:])
+        return arrangements
+
+
+def unfold(springs: str, groups: Sequence[int]) -> (list, list):
+    print(f'unfolding {springs} {groups}')
     return '?'.join([springs] * 5), list(groups) * 5
 
 
@@ -152,7 +213,7 @@ def solve(puzzle_input):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = None     # part2(data)
+    solution2 = part2(data)
 
     return solution1, solution2
 

@@ -1,8 +1,8 @@
 import pathlib
 import sys
 import os
-from point import Point
 from collections import defaultdict
+from typing import Sequence
 
 
 class Pattern:
@@ -10,7 +10,7 @@ class Pattern:
     VERTICAL = 1
     HORIZONTAL = 2
 
-    def __init__(self, pattern: list[str]) -> None:
+    def __init__(self, pattern: Sequence) -> None:
         self.height: int = len(pattern)
         self.width: int = len(pattern[0])
         self.columns: dict[int, set[int]] = defaultdict(set)
@@ -108,9 +108,7 @@ def part2(data):
     """Solve part 2"""
     for pattern in data:
         pattern.fix_smudge()
-
-    return sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.VERTICAL) + \
-        100 * sum(pattern.reflection_line + 1 for pattern in data if pattern.reflection_direction == Pattern.HORIZONTAL)
+    return part1(data)
 
 
 def solve(puzzle_input):
