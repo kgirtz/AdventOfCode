@@ -1,10 +1,12 @@
 import pathlib
 import sys
 import os
-from typing import Iterable, NamedTuple
+from typing import Iterable
+from dataclasses import dataclass
 
 
-class Range(NamedTuple):
+@dataclass
+class Range:
     dst_start: int
     src_start: int
     length: int
@@ -27,7 +29,7 @@ class Range(NamedTuple):
                self.dst_start < post.src_start and self.dst_end() > post.src_end()
 
 
-def collapse_ranges(pre: Range, post: list[Range]) -> list[Range]:
+"""def collapse_ranges(pre: Range, post: list[Range]) -> list[Range]:
     new_ranges: list[Range] = []
     for r in post:
         if pre.overlaps_post(r):
@@ -36,7 +38,7 @@ def collapse_ranges(pre: Range, post: list[Range]) -> list[Range]:
     else:
         return [pre]
 
-    return new_ranges
+    return new_ranges"""
 
 
 class Map:
@@ -51,7 +53,7 @@ class Map:
                 return r.convert(n)
         return n
 
-    def merge(self, other: 'Map') -> None:
+    """def merge(self, other: 'Map') -> None:
         if self.destination == other.source:
             pre, post = self, other
         elif other.destination == self.source:
@@ -65,7 +67,7 @@ class Map:
         new_ranges: list[Range] = []
         for r in self.ranges:
             new_ranges.extend(collapse_ranges(r, post.ranges))
-        self.ranges = new_ranges
+        self.ranges = new_ranges"""
 
 Almanac = dict[str, Map]
 
@@ -85,12 +87,12 @@ def parse(puzzle_input):
 
 
 def look_up(n: int, source: str, destination: str, almanac: Almanac) -> int:
-    print(f'look_up({n}, {source}, {destination}) = ', end='')
+    # print(f'look_up({n}, {source}, {destination}) = ', end='')
     while source != destination:
         source_map: Map = almanac[source]
         n = source_map[n]
         source = source_map.destination
-    print(n)
+    # print(n)
     return n
 
 
@@ -103,7 +105,8 @@ def part1(data):
 def part2(data):
     """Solve part 2"""
     seed_ranges, almanac = data
-    global_min: int = -1
+
+    """global_min: int = -1
     for i in range(0, len(seed_ranges), 2):
         start, length = seed_ranges[i:i + 2]
         range_min: int = min(look_up(seed, 'seed', 'location', almanac) for seed in range(start, start + length))
@@ -111,7 +114,26 @@ def part2(data):
             global_min = range_min
         else:
             global_min = min(global_min, range_min)
-    return global_min
+    return global_min"""
+
+    new_almanac: Almanac = {}
+    for m in almanac.values():
+        m.source, m.destination = m.destination, m.source
+        for r in m.ranges:
+            r.src_start, r.dst_start = r.dst_start, r.src_start
+        new_almanac[m.source] = m
+    almanac = new_almanac
+
+    location: int = 200000000
+    while True:
+        seed: int = look_up(location, 'location', 'seed', almanac)
+        for i in range(0, len(seed_ranges), 2):
+            if seed_ranges[i] <= seed < sum(seed_ranges[i:i + 2]):
+                # print(seed)
+                return location
+        location += 1
+        if location % 100000 == 0:
+            print('.', end='')
 
 
 def solve(puzzle_input):
