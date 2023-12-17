@@ -124,7 +124,7 @@ def part2(data):
         new_almanac[m.source] = m
     almanac = new_almanac
 
-    location: int = 200000000
+    location: int = 100000000
     while True:
         seed: int = look_up(location, 'location', 'seed', almanac)
         for i in range(0, len(seed_ranges), 2):
@@ -132,7 +132,7 @@ def part2(data):
                 # print(seed)
                 return location
         location += 1
-        if location % 100000 == 0:
+        if location % 1000000 == 0:
             print('.', end='')
 
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = 35
-    PART2_TEST_ANSWER = 46
+    PART2_TEST_ANSWER = None #46
 
     file = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
