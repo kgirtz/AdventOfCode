@@ -10,7 +10,7 @@ class Pattern:
     VERTICAL = 1
     HORIZONTAL = 2
 
-    def __init__(self, pattern: Sequence) -> None:
+    def __init__(self, pattern: Sequence[str]) -> None:
         self.height: int = len(pattern)
         self.width: int = len(pattern[0])
         self.columns: dict[int, set[int]] = defaultdict(set)
