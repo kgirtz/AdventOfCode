@@ -1,11 +1,26 @@
 import pathlib
 import sys
 import os
+from typing import Sequence
+
+
+class Module:
+    def __init__(self, name: str, destinations: Sequence[str], mod_type: str = '') -> None:
+        self.name: str = name
+        self.type: str = name if name == 'broadcaster' else mod_type
+        self.destinations: list[str] = list(destinations)
 
 
 def parse(puzzle_input):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    modules: list[Module] = []
+    for line in puzzle_input.split('\n'):
+        name, destinations = line.split(' -> ')
+        if name == 'broadcaster':
+            modules.append(Module(name, destinations.split(', ')))
+        else:
+            modules.append(Module(name[1:], destinations.split(', '), name[0]))
+    return modules
 
 
 def part1(data):
