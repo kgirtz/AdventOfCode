@@ -18,18 +18,24 @@ class Lagoon:
     def __init__(self, instructions: Sequence[tuple[str, int]]) -> None:
         self.border: set[Point] = {ORIGIN}
         self.segments: set[tuple[Point, Point]] = set()
+        self.horizontal_segments: dict[int, list[tuple[int, int]]] = defaultdict(list)
+        self.vertical_segments: list[tuple[Point, Point]] = []
 
         x, y = ORIGIN
         for direction, distance in instructions:
             match direction:
                 case 'U':
                     self.segments.add((Point(x, y), Point(x, y - distance)))
+                    self.vertical_segments.append((Point(x, y - distance), Point(x, y)))
                 case 'D':
                     self.segments.add((Point(x, y), Point(x, y + distance)))
+                    self.vertical_segments.append((Point(x, y), Point(x, y + distance)))
                 case 'L':
                     self.segments.add((Point(x, y), Point(x - distance, y)))
+                    self.horizontal_segments[y].append((x - distance, x))
                 case 'R':
                     self.segments.add((Point(x, y), Point(x + distance, y)))
+                    self.horizontal_segments[y].append((x, x + distance))
 
             while distance > 0:
                 x, y = self.next_point(Point(x, y), direction)
