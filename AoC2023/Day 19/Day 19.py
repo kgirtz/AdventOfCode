@@ -30,73 +30,76 @@ class Workflow:
             return part[category] > int(value)
 
 
+class System:
+    def __init__(self) -> None:
+        self.workflows: dict[str, Workflow] = {}
+
+    def accepted(self, part: Part) -> bool:
+        next_workflow: str = 'in'
+        while next_workflow not in ('A', 'R'):
+            next_workflow = self.workflows[next_workflow].process(part)
+        return next_workflow == 'A'
+
+    def number_accepted(self, bottom: Part, top: Part, cur_flow: str = 'in') -> int:
+        if cur_flow == 'R' or any(top[c] < bottom[c] for c in top):
+            return 0
+        if cur_flow == 'A':
+            combos: int = 1
+            for category in bottom:
+                combos *= top[category] - bottom[category] + 1
+            return combos
+
+        total_combos: int = 0
+        for rule in self.workflows[cur_flow].rules:
+            if ':' not in rule:
+                return total_combos + self.number_accepted(bottom.copy(), top.copy(), rule)
+
+            condition, destination = rule.split(':')
+            if '<' in condition:
+                category, value = condition.split('<')
+                new_top: Part = top.copy()
+                new_top[category] = int(value) - 1
+                total_combos += self.number_accepted(bottom.copy(), new_top, destination)
+                bottom[category] = int(value)
+            elif '>' in condition:
+                category, value = condition.split('>')
+                new_bottom: Part = bottom.copy()
+                new_bottom[category] = int(value) + 1
+                total_combos += self.number_accepted(new_bottom, top.copy(), destination)
+                top[category] = int(value)
+
+
 def parse(puzzle_input):
     """Parse input"""
     workflow_str, rating_str = puzzle_input.split('\n\n')
 
-    workflows: dict[str, Workflow] = {}
+    system: System = System()
     for line in workflow_str.split('\n'):
         name, rules = re.match(r'(.+)\{(.+)\}', line).groups()
-        workflows[name] = Workflow(rules.split(','))
+        system.workflows[name] = Workflow(rules.split(','))
 
-    ratings: list[Part] = []
+    parts: list[Part] = []
     for line in rating_str.split('\n'):
         part: Part = {}
         for rating in line.strip('{}').split(','):
             category, value = rating.split('=')
             part[category] = int(value)
-        ratings.append(part)
+        parts.append(part)
 
-    return workflows, ratings
-
-
-def accepted(part: Part, workflows: dict[str, Workflow]) -> bool:
-    next_workflow: str = 'in'
-    while next_workflow not in ('A', 'R'):
-        next_workflow = workflows[next_workflow].process(part)
-    return next_workflow == 'A'
-
-
-def number_accepted(bottom: Part, top: Part, workflows: dict[str, Workflow], cur_flow: str = 'in') -> int:
-    if cur_flow == 'R' or any(top[c] < bottom[c] for c in top):
-        return 0
-    if cur_flow == 'A':
-        combos: int = 1
-        for category in bottom:
-            combos *= top[category] - bottom[category] + 1
-        return combos
-
-    total_combos: int = 0
-    for rule in workflows[cur_flow].rules:
-        if ':' not in rule:
-            return total_combos + number_accepted(bottom.copy(), top.copy(), workflows, rule)
-
-        condition, destination = rule.split(':')
-        if '<' in condition:
-            category, value = condition.split('<')
-            new_top: Part = top.copy()
-            new_top[category] = int(value) - 1
-            total_combos += number_accepted(bottom.copy(), new_top, workflows, destination)
-            bottom[category] = int(value)
-        elif '>' in condition:
-            category, value = condition.split('>')
-            new_bottom: Part = bottom.copy()
-            new_bottom[category] = int(value) + 1
-            total_combos += number_accepted(new_bottom, top.copy(), workflows, destination)
-            top[category] = int(value)
+    return system, parts
 
 
 def part1(data):
     """Solve part 1"""
-    workflows, parts = data
-    accepted_parts: list[Part] = [p for p in parts if accepted(p, workflows)]
+    system, parts = data
+    accepted_parts: list[Part] = [p for p in parts if system.accepted(p)]
     return sum(sum(p.values()) for p in accepted_parts)
 
 
 def part2(data):
     """Solve part 2"""
-    workflows, _ = data
-    return number_accepted({c: 1 for c in 'xmas'}, {c: 4000 for c in 'xmas'}, workflows)
+    system, _ = data
+    return system.number_accepted({c: 1 for c in 'xmas'}, {c: 4000 for c in 'xmas'})
 
 
 def solve(puzzle_input):
