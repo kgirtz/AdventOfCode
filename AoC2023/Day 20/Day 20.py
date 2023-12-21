@@ -147,8 +147,6 @@ def part2(data):
     while not rx_low:
         _, _, rx_low = push_button(data)
         button_pushes += 1
-        if button_pushes % 10000 == 0:
-            print('.', end='')
 
     return button_pushes
 
