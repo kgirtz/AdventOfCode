@@ -2,8 +2,7 @@ import pathlib
 import sys
 import os
 import re
-import itertools
-from point import Point, ORIGIN
+from point import Point
 from typing import Sequence
 from collections import defaultdict
 
@@ -16,104 +15,105 @@ def color_code_to_instruction(code: str) -> (str, int):
 
 class Lagoon:
     def __init__(self, instructions: Sequence[tuple[str, int]]) -> None:
-        self.border: set[Point] = {ORIGIN}
-        self.segments: set[tuple[Point, Point]] = set()
-        self.horizontal_segments: dict[int, list[tuple[int, int]]] = defaultdict(list)
-        self.vertical_segments: list[tuple[Point, Point]] = []
+        self.segments: list[tuple[Point, Point]] = []
 
-        x, y = ORIGIN
+        x, y = 0, 0
         for direction, distance in instructions:
             match direction:
                 case 'U':
-                    self.segments.add((Point(x, y), Point(x, y - distance)))
-                    self.vertical_segments.append((Point(x, y - distance), Point(x, y)))
+                    self.segments.append((Point(x, y), Point(x, y - distance)))
+                    y -= distance
                 case 'D':
-                    self.segments.add((Point(x, y), Point(x, y + distance)))
-                    self.vertical_segments.append((Point(x, y), Point(x, y + distance)))
+                    self.segments.append((Point(x, y), Point(x, y + distance)))
+                    y += distance
                 case 'L':
-                    self.segments.add((Point(x, y), Point(x - distance, y)))
-                    self.horizontal_segments[y].append((x - distance, x))
+                    self.segments.append((Point(x, y), Point(x - distance, y)))
+                    x -= distance
                 case 'R':
-                    self.segments.add((Point(x, y), Point(x + distance, y)))
-                    self.horizontal_segments[y].append((x, x + distance))
+                    self.segments.append((Point(x, y), Point(x + distance, y)))
+                    x += distance
 
-            while distance > 0:
-                x, y = self.next_point(Point(x, y), direction)
-                self.border.add(Point(x, y))
-                distance -= 1
+    def is_s_shape(self, segment: tuple[Point, Point]) -> bool:
+        if segment not in self.segments:
+            segment = segment[::-1]
+        segment_pos: int = self.segments.index(segment)
 
-    @staticmethod
-    def next_point(pt: Point, direction: str) -> Point:
-        match direction:
-            case 'U':
-                return pt.above()
-            case 'D':
-                return pt.below()
-            case 'R':
-                return pt.right()
-            case 'L':
-                return pt.left()
+        prev_seg: tuple[Point, Point] = self.segments[segment_pos - 1]
+        next_seg: tuple[Point, Point] = self.segments[(segment_pos + 1) % len(self.segments)]
+
+        return (prev_seg[0].y < segment[0].y and next_seg[1].y > segment[1].y) or \
+            (prev_seg[0].y > segment[0].y and next_seg[1].y < segment[1].y)
 
     def size(self) -> int:
-        inside: Point = ORIGIN.up_right()
-        if ORIGIN.above() in self.border:
-            outside: Point = ORIGIN.up_left()
-        elif ORIGIN.right() in self.border:
-            outside: Point = ORIGIN.down_right()
-        else:
-            outside: Point = ORIGIN.down_left()
+        horizontal_segments: dict[int, list[tuple[int, int]]] = defaultdict(list)
+        vertical_segments: list[tuple[Point, Point]] = []
 
-        inside_area: set[Point] = set()
-        outside_area: set[Point] = set()
-        inside_to_explore: set[Point] = {inside}
-        outside_to_explore: set[Point] = {outside}
-        while inside_to_explore and outside_to_explore:
-            cur_inside: Point = inside_to_explore.pop()
-            cur_outside: Point = outside_to_explore.pop()
-            inside_to_explore |= cur_inside.neighbors(diagonals=True) - inside_area - self.border
-            outside_to_explore |= cur_outside.neighbors(diagonals=True) - outside_area - self.border
-            inside_area.add(cur_inside)
-            outside_area.add(cur_outside)
-
-        if not outside_to_explore:
-            lagoon: set[Point] = self.border | outside_area
-        else:
-            lagoon: set[Point] = self.border | inside_area
-
-        return len(lagoon)
-
-    def size_smart(self) -> int:
-        horizontal_lines: dict[int, list[int]] = defaultdict(list)
         for start, end in self.segments:
-            horizontal_lines[start.y].append(start.x)
+            if start.x == end.x:
+                top, bottom = (start, end) if start.y < end.y else (end, start)
+                vertical_segments.append((top, bottom))
+            else:
+                left, right = (start, end) if start.x < end.x else (end, start)
+                horizontal_segments[left.y].append((left.x, right.x))
 
-        for cols in horizontal_lines.values():
-            cols.sort()
+        vertical_segments.sort(key=lambda pair: pair[1].y, reverse=True)
 
-        lines: list[int] = sorted(horizontal_lines.keys())
+        top_row: int = min(horizontal_segments.keys())
+        bottom_row: int = max(horizontal_segments.keys())
 
-        top: int = lines[0]
-        bottom: int = lines[-1]
+        total_area: int = 0
+        row: int = top_row
+        while row <= bottom_row:
+            intersections: list[tuple[int, ...]] = []
+            if row in horizontal_segments:
+                intersections.extend(horizontal_segments[row])
+            for top, bottom in vertical_segments:
+                if row >= bottom.y:
+                    break
+                if top.y < row:
+                    intersections.append((top.x,))
+            intersections.sort()
 
-        if len(horizontal_lines[top]) != 2:
-            print('PROBLEM')
-            return 0
+            side: str = 'out'
+            left_side: int = 0
+            right_side: int = 0
+            row_area: int = 0
+            for intersection in intersections:
+                # Vertical border crosses row
+                if len(intersection) == 1:
+                    if side == 'out':
+                        left_side = intersection[0]
+                        side = 'in'
+                    else:
+                        right_side = intersection[0]
+                        side = 'out'
 
-        total_size: int = 0
-        for lo, hi in itertools.pairwise(lines):
-            total_size += max(horizontal_lines[lo]) - min(horizontal_lines[lo]) + 1
+                # Horizontal segment in row
+                else:
+                    if self.is_s_shape((Point(intersection[0], row), Point(intersection[1], row))):
+                        if side == 'out':
+                            left_side = intersection[0]
+                            side = 'in'
+                        else:
+                            right_side = intersection[1]
+                            side = 'out'
+                    elif side == 'out':
+                        left_side, right_side = intersection
 
-            if len(horizontal_lines[lo]) == 2:
-                left, right = horizontal_lines[lo]
-            elif len(horizontal_lines) == 3:
-                pass
+                if side == 'out':
+                    row_area += right_side - left_side + 1
 
+            if row not in horizontal_segments:
+                num_repeated_rows: int = 0
+                while row not in horizontal_segments:
+                    row += 1
+                    num_repeated_rows += 1
+                total_area += row_area * num_repeated_rows
+            else:
+                row += 1
+                total_area += row_area
 
-            total_size += (lo - hi - 2) * (right - left + 1)
-
-
-
-
+        return total_area
 
 
 def parse(puzzle_input):
@@ -132,9 +132,7 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    Lagoon([color_code_to_instruction(color) for _, _, color in data])
-    return None
-    return Lagoon([color_code_to_instruction(color) for _, _, color in data]).size_smart()
+    return Lagoon([color_code_to_instruction(color) for _, _, color in data]).size()
 
 
 def solve(puzzle_input):
@@ -142,7 +140,7 @@ def solve(puzzle_input):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = None # part2(data)
+    solution2 = part2(data)
 
     return solution1, solution2
 
