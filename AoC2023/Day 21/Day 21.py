@@ -3,6 +3,7 @@ import sys
 import os
 from typing import Sequence
 from point import Point
+from collections import defaultdict
 
 
 class Garden:
@@ -22,11 +23,21 @@ class Garden:
     def valid_point(self, pt: Point) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    def take_steps(self, num_steps: int) -> list[Point]:
-        cur_points: set[Point] = {self.start}
-
-
-        return list(cur_points)
+    def possible_destinations(self, num_steps: int) -> int:
+        cur_points: dict[Point, int] = {self.start: 1}
+        for _ in range(num_steps):
+            new_points: dict[Point, int] = defaultdict(int)
+            for pt, num in cur_points.items():
+                for neighbor in pt.neighbors():
+                    if self.valid_point(neighbor):
+                        new_points[neighbor] = num
+                    else:
+                        neighbor = Point(neighbor.x % self.width, neighbor.y % self.height)
+                        new_points[neighbor] += 1
+            cur_points = {pt: num for pt, num in new_points.items() if pt not in self.rocks}
+            print(cur_points)
+        print(sum(cur_points.values()))
+        return sum(cur_points.values())
 
 
 def parse(puzzle_input):
@@ -36,20 +47,20 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    return len(data.take_steps(6))
+    return data.possible_destinations(num_steps=64)  # test = 6, input = 64
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    return data.possible_destinations(num_steps=10)  # test.txt: 5000, input = 26501365
 
 
 def solve(puzzle_input):
     """Solve the puzzle for the given input"""
     data = parse(puzzle_input)
-    solution1 = None  # part1(data)
+    solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = part2(data)
+    solution2 = None  # part2(data)
 
     return solution1, solution2
 
@@ -57,8 +68,8 @@ def solve(puzzle_input):
 if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = 16
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = None  # test = 16, input = None
+    PART2_TEST_ANSWER = 50  # test = 16733044, input = None
 
     file = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
