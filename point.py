@@ -34,16 +34,16 @@ class Point(typing.NamedTuple):
         return Point(self.x + 1, self.y + 1)
 
     def is_left_of(self, pt: 'Point') -> bool:
-        return self.right() == pt
+        return self.x + 1 == pt.x and self.y == pt.y
 
     def is_right_of(self, pt: 'Point') -> bool:
-        return self.left() == pt
+        return self.x - 1 == pt.x and self.y == pt.y
 
     def is_above(self, pt: 'Point') -> bool:
-        return self.below() == pt
+        return self.x == pt.x and self.y + 1 == pt.y
 
     def is_below(self, pt: 'Point') -> bool:
-        return self.above() == pt
+        return self.x == pt.x and self.y - 1 == pt.y
 
     def is_adjacent_to(self, pt: 'Point') -> bool:
         return self.is_above(pt) or self.is_below(pt) or self.is_left_of(pt) or self.is_right_of(pt)
