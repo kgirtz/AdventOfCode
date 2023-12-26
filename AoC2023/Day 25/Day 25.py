@@ -1,16 +1,38 @@
 import pathlib
 import sys
 import os
+from typing import Iterable
 
 
 def parse(puzzle_input):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    connections: dict[str, list[str]] = {}
+    for line in puzzle_input.split('\n'):
+        left, right = line.split(': ')
+        connections[left] = right.split()
+    return connections
+
+
+def split_groups(connections: dict[str, list[str]], num_groups: int, num_cuts: int) -> list[set[str]]:
+    all_components: Iterable[str] = set(connections.keys())
+    for wires in connections.values():
+        all_components |= wires
+    all_components = list(all_components)
+
+    for i, c1 in enumerate(all_components[:-2]):
+        for j, c2 in enumerate(all_components[i + 1:-1]):
+            for k, c3 in enumerate(all_components[j + 1:]):
+
+
+    return []
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    product: int = 1
+    for group in split_groups(data,2, 3):
+        product *= len(group)
+    return product
 
 
 def part2(data):
@@ -31,7 +53,7 @@ def solve(puzzle_input):
 if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 54
     PART2_TEST_ANSWER = None
 
     file = pathlib.Path(DIR + 'part1_test.txt')
