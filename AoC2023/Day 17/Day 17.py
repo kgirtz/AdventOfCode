@@ -2,7 +2,9 @@ import pathlib
 import sys
 import os
 import functools
+import heapq
 from point import Point
+from collections import defaultdict
 
 
 class HeatLossMap:
@@ -91,6 +93,37 @@ class HeatLossMap:
 
         return min_loss
 
+    def dijkstra_heat_loss(self, start: Point, end: Point) -> int:
+        prev_pos: dict[Point, Point] = {}  # defaultdict(list)
+        min_heat_loss: dict[Point, int] = {Point(x, y): self.inf for y in range(self.height) for x in range(self.width)}
+        min_heat_loss[start] = 0
+
+        visited: set[Point] = set()
+        to_check: list[tuple[int, Point]] = [(min_heat_loss[start], start)]
+        prev_pos[start] = start
+        while end not in visited:
+            _, cur_pt = heapq.heappop(to_check)
+            # while cur_pt in visited:
+            #    _, cur_pt = heapq.heappop(to_check)
+
+            for n in cur_pt.neighbors():
+                if n in self and n not in visited and not four_in_a_row(n, cur_pt, prev_pos[cur_pt], prev_pos[prev_pos[cur_pt]]):
+                    loss: int = min_heat_loss[cur_pt] + self.heat_loss_at(n)
+                    if loss < min_heat_loss[n]:
+                        min_heat_loss[n] = loss
+                        prev_pos[n] = cur_pt
+                    heapq.heappush(to_check, (min_heat_loss[n], n))
+            visited.add(cur_pt)
+        print(min_heat_loss[end])
+        return min_heat_loss[end]
+
+
+def four_in_a_row(pt1: Point, pt2: Point, pt3: Point, pt4: Point) -> bool:
+    return (pt1.is_above(pt2) and pt2.is_above(pt3) and pt3.is_above(pt4)) or \
+           (pt1.is_below(pt2) and pt2.is_below(pt3) and pt3.is_below(pt4)) or \
+           (pt1.is_left_of(pt2) and pt2.is_left_of(pt3) and pt3.is_left_of(pt4)) or \
+           (pt1.is_right_of(pt2) and pt2.is_right_of(pt3) and pt3.is_right_of(pt4))
+
 
 def parse(puzzle_input):
     """Parse input"""
@@ -99,7 +132,8 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    return data.minimal_heat_loss(Point(0, 0), Point(data.width - 1, data.height - 1), tuple())
+    # return data.minimal_heat_loss(Point(0, 0), Point(data.width - 1, data.height - 1), tuple())
+    return data.dijkstra_heat_loss(Point(0, 0), Point(data.width - 1, data.height - 1))
 
 
 def part2(data):
