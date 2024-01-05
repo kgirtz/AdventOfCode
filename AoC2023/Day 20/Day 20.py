@@ -22,7 +22,7 @@ class Module(abc.ABC):
         self.outputs: tuple[str, ...] = tuple(outputs)
         self.pulse_queue: deque[Pulse] = deque()
 
-    def ready(self) -> bool:
+    def nothing_to_process(self) -> bool:
         return not self.pulse_queue
 
     def send_pulse(self, pulse: bool) -> Pulse:
@@ -98,16 +98,19 @@ def parse(puzzle_input):
 
 
 def push_button(modules: dict[str, Module]) -> (int, int, bool):
-    modules['broadcaster'].receive_pulse(Pulse(Pulse.LOW, 'button', ['broadcaster']))
-    low_count: int = 1
+    low_count: int = 0
     high_count: int = 0
     low_to_rx: bool = False
+
+    button_pulse: Pulse = Pulse(Pulse.LOW, 'button', ['broadcaster'])
+    modules['broadcaster'].receive_pulse(button_pulse)
+    low_count += 1
 
     keep_processing: bool = True
     while keep_processing:
         keep_processing = False
         for module in modules.values():
-            if module.ready():
+            if module.nothing_to_process():
                 continue
 
             pulse: Optional[Pulse] = module.process_next_pulse()
@@ -141,13 +144,11 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    _, _, rx_low = push_button(data)
-    button_pushes: int = 1
-
+    rx_low: bool = False
+    button_pushes: int = 0
     while not rx_low:
         _, _, rx_low = push_button(data)
         button_pushes += 1
-
     return button_pushes
 
 
@@ -156,7 +157,7 @@ def solve(puzzle_input):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = part2(data)
+    solution2 = None # part2(data)
 
     return solution1, solution2
 
