@@ -1,75 +1,49 @@
 import pathlib
 import sys
 import os
-from typing import Iterable
-from dataclasses import dataclass
+import itertools
+from typing import Iterable, Sequence
 
 
-@dataclass
-class Range:
-    dst_start: int
-    src_start: int
-    length: int
-
-    def src_end(self) -> int:
-        return self.src_start + self.length - 1
-
-    def dst_end(self) -> int:
-        return self.dst_start + self.length - 1
-
-    def __contains__(self, n: int) -> bool:
-        return self.src_start <= n <= self.src_end()
-
-    def convert(self, n: int) -> int:
-        return n - self.src_start + self.dst_start
-
-    def overlaps_post(self, post: 'Range') -> bool:
-        return self.dst_start in post or \
-               self.dst_end() in post or \
-               self.dst_start < post.src_start and self.dst_end() > post.src_end()
-
-
-"""def collapse_ranges(pre: Range, post: list[Range]) -> list[Range]:
-    new_ranges: list[Range] = []
-    for r in post:
-        if pre.overlaps_post(r):
-
-
-    else:
-        return [pre]
-
-    return new_ranges"""
-
-
-class Map:
-    def __init__(self, source: str, destination: str, ranges: Iterable[str]) -> None:
+class ComponentMap:
+    def __init__(self, source: str, destination: str, ranges: Iterable[tuple[int, int, int]]) -> None:
         self.source: str = source
         self.destination: str = destination
-        self.ranges: list[Range] = [Range(*(int(n) for n in r.split())) for r in ranges]
+        self.ranges: list[tuple[int, int, int]] = list(ranges)
 
-    def __getitem__(self, n: int) -> int:
-        for r in self.ranges:
-            if n in r:
-                return r.convert(n)
+    def lookup(self, n: int, *, reverse: bool = False) -> int:
+        for dst, src, length in self.ranges:
+            if reverse:
+                dst, src = src, dst
+            if src <= n < src + length:
+                return n - src + dst
         return n
 
-    """def merge(self, other: 'Map') -> None:
-        if self.destination == other.source:
-            pre, post = self, other
-        elif other.destination == self.source:
-            pre, post = other, self
-        else:
-            print('INVALID MAP MERGE')
-            return
+    def remaining_range_length(self, n: int, *, reverse: bool = False) -> int:
+        for dst, src, length in self.ranges:
+            if reverse:
+                dst, src = src, dst
+            if src <= n < src + length:
+                return src + length - n
+        return 1
 
-        pre.destination = post.destination
+    def merge(self, post: 'ComponentMap') -> None:
+        new_ranges: list[tuple[int, int, int]] = []
 
-        new_ranges: list[Range] = []
-        for r in self.ranges:
-            new_ranges.extend(collapse_ranges(r, post.ranges))
-        self.ranges = new_ranges"""
+        points: set[int] = set()
+        for dst, _, length in self.ranges:
+            points.update((dst, dst + length))
+        for _, src, length in post.ranges:
+            points.update((src, src + length))
 
-Almanac = dict[str, Map]
+        for pt1, pt2 in itertools.pairwise(sorted(points)):
+            src: int = self.lookup(pt1, reverse=True)
+            dst: int = post.lookup(pt1)
+            if src != dst:
+                new_ranges.append((dst, src, pt2 - pt1))
+
+        self.destination = post.destination
+        self.ranges = new_ranges
 
 
 def parse(puzzle_input):
@@ -77,63 +51,44 @@ def parse(puzzle_input):
     components: list[str] = puzzle_input.split('\n\n')
     seeds: list[int] = [int(n) for n in components[0].split()[1:]]
 
-    almanac: Almanac = {}
+    almanac: list[ComponentMap] = []
     for component in components[1:]:
         name: str = component.split(':')[0]
         src, dest = name.split()[0].split('-to-')
-        ranges: list[str] = component.split(':')[1].strip().split('\n')
-        almanac[src] = Map(src, dest, ranges)
+        ranges: list[tuple[int, int, int]] = [tuple(int(n) for n in r.split()) for r in
+                                              component.split(':')[1].strip().split('\n')]
+        almanac.append(ComponentMap(src, dest, ranges))
     return seeds, almanac
 
 
-def look_up(n: int, source: str, destination: str, almanac: Almanac) -> int:
-    # print(f'look_up({n}, {source}, {destination}) = ', end='')
-    while source != destination:
-        source_map: Map = almanac[source]
-        n = source_map[n]
-        source = source_map.destination
-    # print(n)
-    return n
+def merge_maps(maps: Sequence[ComponentMap]) -> ComponentMap:
+    consolidated: ComponentMap = maps[0]
+    for cmap in maps[1:]:
+        consolidated.merge(cmap)
+    return consolidated
 
 
 def part1(data):
     """Solve part 1"""
     seeds, almanac = data
-    return min(look_up(seed, 'seed', 'location', almanac) for seed in seeds)
+    merged: ComponentMap = merge_maps(almanac)
+    return min(merged.lookup(seed) for seed in seeds)
 
 
 def part2(data):
     """Solve part 2"""
     seed_ranges, almanac = data
+    merged: ComponentMap = merge_maps(almanac)
 
-    """global_min: int = -1
-    for i in range(0, len(seed_ranges), 2):
-        start, length = seed_ranges[i:i + 2]
-        range_min: int = min(look_up(seed, 'seed', 'location', almanac) for seed in range(start, start + length))
-        if global_min == -1:
-            global_min = range_min
-        else:
-            global_min = min(global_min, range_min)
-    return global_min"""
-
-    new_almanac: Almanac = {}
-    for m in almanac.values():
-        m.source, m.destination = m.destination, m.source
-        for r in m.ranges:
-            r.src_start, r.dst_start = r.dst_start, r.src_start
-        new_almanac[m.source] = m
-    almanac = new_almanac
-
-    location: int = 100000000
+    location: int = 0
     while True:
-        seed: int = look_up(location, 'location', 'seed', almanac)
+        seed: int = merged.lookup(location, reverse=True)
         for i in range(0, len(seed_ranges), 2):
-            if seed_ranges[i] <= seed < sum(seed_ranges[i:i + 2]):
-                # print(seed)
+            start, length = seed_ranges[i:i + 2]
+            if start <= seed < start + length:
                 return location
-        location += 1
-        if location % 1000000 == 0:
-            print('.', end='')
+
+        location += merged.remaining_range_length(location, reverse=True)
 
 
 def solve(puzzle_input):
@@ -150,7 +105,7 @@ if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = 35
-    PART2_TEST_ANSWER = None #46
+    PART2_TEST_ANSWER = 46
 
     file = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:

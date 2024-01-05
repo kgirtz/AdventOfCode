@@ -1,11 +1,12 @@
 import pathlib
 import sys
 import os
+import heapq
+import functools
 from cube import Cube
 from typing import Iterable
-from collections import defaultdict
 
-
+    
 class Brick:
     def __init__(self, endpoint1: Cube, endpoint2: Cube) -> None:
         self.x_min: int = min(endpoint1.x, endpoint2.x)
@@ -15,6 +16,8 @@ class Brick:
         self.z_min: int = min(endpoint1.z, endpoint2.z)
         self.z_max: int = max(endpoint1.z, endpoint2.z)
         self.height: int = self.z_max - self.z_min
+        self.supports: set[Brick] = set()
+        self.is_supported_by: set[Brick] = set()
 
     def __repr__(self) -> str:
         return f'{self.x_min},{self.y_min},{self.z_min}~{self.x_max},{self.y_max},{self.z_max}'
@@ -22,20 +25,22 @@ class Brick:
     def __hash__(self) -> int:
         return hash(repr(self))
 
-    def over(self, other: 'Brick') -> bool:
-        return self.z_min > other.z_max and \
-            other.x_max >= self.x_min and self.x_max >= other.x_min and \
-            other.y_max >= self.y_min and self.y_max >= other.y_min
+    def __lt__(self, other) -> bool:
+        return self.z_min < other.z_min
+
+    def overlaps(self, other: 'Brick') -> bool:
+        return other.x_max >= self.x_min and self.x_max >= other.x_min and \
+               other.y_max >= self.y_min and self.y_max >= other.y_min
 
     def rests_on(self, other: 'Brick') -> bool:
-        return self.over(other) and self.z_min == other.z_max + 1
+        return self.z_min == other.z_max + 1 and self.overlaps(other)
 
     def fall(self, others: Iterable['Brick']) -> None:
-        if self.z_min == 1:
+        if self.z_min <= 1:
             return
 
         for brick in sorted(others, key=lambda b: b.z_max, reverse=True):
-            if self.over(brick):
+            if self.z_min > brick.z_max and self.overlaps(brick):
                 self.z_min = brick.z_max + 1
                 self.z_max = self.z_min + self.height
                 return
@@ -55,57 +60,68 @@ def parse(puzzle_input):
     return bricks
 
 
-def settle(bricks: Iterable[Brick]) -> (dict[Brick, set[Brick]], dict[Brick, set[Brick]]):
-    bricks: list[Brick] = sorted(bricks, key=lambda b: b.z_min)
+def settle(bricks: Iterable[Brick]) -> None:
+    bricks = sorted(bricks)
     for i, brick in enumerate(bricks):
         brick.fall(bricks[:i])
 
-    supports: dict[Brick, set[Brick]] = defaultdict(set)
-    supported_by: dict[Brick, set[Brick]] = defaultdict(set)
-    for i, top in enumerate(bricks[:-1]):
-        for bottom in bricks[i + 1:]:
+    for i, bottom in enumerate(bricks[:-1]):
+        for top in bricks[i + 1:]:
             if top.rests_on(bottom):
-                supports[bottom].add(top)
-                supported_by[top].add(bottom)
-            elif bottom.rests_on(top):
-                supports[top].add(bottom)
-                supported_by[bottom].add(top)
+                bottom.supports.add(top)
+                top.is_supported_by.add(bottom)
 
-    return supports, supported_by
+
+@functools.lru_cache(maxsize=None)
+def remove_brick(brick: Brick) -> set[Brick]:
+    if not brick.supports:
+        return set()
+
+    # Remove each above individually
+    falling_bricks: set[Brick] = set()
+    for above in brick.supports:
+        if len(above.is_supported_by) == 1:
+            falling_bricks.add(above)
+            falling_bricks |= remove_brick(above)
+
+    # Remove all above simultaneously
+    to_check: list[Brick] = []
+    for falling in falling_bricks:
+        to_check.extend(falling.supports - falling_bricks)
+
+    to_check = list(set(to_check))
+    heapq.heapify(to_check)
+
+    while to_check:
+        cur_brick: Brick = heapq.heappop(to_check)
+        if cur_brick.is_supported_by.issubset(falling_bricks):
+            falling_bricks.add(cur_brick)
+            falling_bricks |= remove_brick(cur_brick)
+            for above in cur_brick.supports - falling_bricks:
+                heapq.heappush(to_check, above)
+
+    return falling_bricks
 
 
 def part1(data):
     """Solve part 1"""
-    supports, supported_by = settle(data)
+    settle(data)
 
     can_safely_disintegrate: int = 0
     for brick in data:
-        for b in supports[brick]:
-            if len(supported_by[b]) == 1:
-                break
-        else:
+        if all(len(above.is_supported_by) > 1 for above in brick.supports):
             can_safely_disintegrate += 1
-
     return can_safely_disintegrate
 
 
 def part2(data):
     """Solve part 2"""
-    supports, supported_by = settle(data)
+    settle(data)
 
-    num_falling_bricks: dict[Brick, int] = {}
-
-    bricks: list[Brick] = sorted(data, key=lambda b: b.z_max, reverse=True)
-
-    for i, brick in enumerate(bricks):
-        falling_bricks: int = 0
-        for b in supports[brick]:
-            if len(supported_by[b]) == 1:
-                falling_bricks += num_falling_bricks[b] + 1
-        num_falling_bricks[brick] = falling_bricks
-
-    print(sum(num_falling_bricks.values()))
-    return sum(num_falling_bricks.values())
+    total_falling_bricks: int = 0
+    for brick in sorted(data, key=lambda b: b.z_max, reverse=True):
+        total_falling_bricks += len(remove_brick(brick))
+    return total_falling_bricks
 
 
 def solve(puzzle_input):
