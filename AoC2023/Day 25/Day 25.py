@@ -1,8 +1,6 @@
 import pathlib
 import sys
 import os
-import random
-from typing import Iterable
 from collections import defaultdict
 
 
@@ -20,63 +18,77 @@ def parse(puzzle_input):
     return nodes, edges
 
 
-def set_connections(left: set[str], right: set[str], edges: set[tuple[str, str]]) -> int:
-    connections: int = 0
-    for a, b in edges:
-        if (a in left and b in right) or (b in left and a in right):
-            connections += 1
-    print(connections)
-    return connections
+def expand(to_expand: set[str], nodes: dict[str, set[str]], min_connections: int = 0) -> set[str]:
+    expanded_nodes: set[str] = to_expand.copy()
+    while to_expand:
+        cur_node: str = to_expand.pop()
+        expanded_nodes.add(cur_node)
+        for neighbor in nodes[cur_node] - expanded_nodes:
+            if len(nodes[neighbor] & expanded_nodes) >= min_connections:
+                to_expand.add(neighbor)
+    return expanded_nodes
+
+
+def connected_components(nodes: dict[str, set[str]]) -> list[set[str]]:
+    components: list[set[str]] = []
+    
+    remaining_nodes: set[str] = set(nodes.keys())
+    while remaining_nodes:
+        cur_component: set[str] = expand({remaining_nodes.pop()}, nodes)
+        components.append(cur_component)
+        remaining_nodes -= cur_component
+        
+    return components
+
+
+def independent_groups(nodes: dict[str, set[str]]) -> (set[str], set[str]):
+    node_list: list[str] = list(nodes)
+    num_nodes: int = len(node_list)
+    
+    if num_nodes == 1:
+        return {node_list[0]}, set()
+    
+    components: list[set[str]] = connected_components(nodes)
+    if len(components) >= 2:
+        components.sort(key=lambda s: len(s), reverse=True)
+        return tuple(components[:2])
+    
+    half_nodes: set[str] = set(node_list[:num_nodes // 2])
+    return independent_groups({n: nodes[n] & half_nodes for n in half_nodes})
 
 
 def part1(data):
     """Solve part 1"""
     nodes, edges = data
-
-    node_list: list[str] = list(nodes)
-    num_nodes: int = len(node_list)
-
-    left_nodes: set[str] = set()
-    right_nodes: set[str] = set()
-
-    while not left_nodes or not right_nodes:
-        random.shuffle(node_list)
-
-        left_nodes = set(node_list[:num_nodes // 2])
-        right_nodes = set(node_list[num_nodes // 2:])
-
-        left_to_right: set[str] = {n for n in left_nodes if not (nodes[n] & left_nodes)}
-        left_nodes -= left_to_right
-        right_nodes.update(left_to_right)
-
-        right_to_left: set[str] = {n for n in right_nodes if not (nodes[n] & right_nodes)}
-        right_nodes -= right_to_left
-        left_nodes.update(right_to_left)
-
-        while set_connections(left_nodes, right_nodes, edges) > 3:
-            left_to_right = {n for n in left_nodes if nodes[n] & right_nodes}
-            # left_to_right = {n for n in left_nodes if len(nodes[n] & right_nodes) > len(nodes[n] & left_nodes)}
-            left_nodes -= left_to_right
-            right_nodes.update(left_to_right)
-
-            right_to_left = {n for n in right_nodes if nodes[n] & left_nodes}
-            # right_to_left = {n for n in right_nodes if len(nodes[n] & left_nodes) > len(nodes[n] & right_nodes)}
-            right_nodes -= right_to_left
-            left_nodes.update(right_to_left)
-
-            if not left_to_right and not right_to_left:
-                left_to_right = {n for n in left_nodes if len(nodes[n] & right_nodes) == len(nodes[n] & left_nodes)}
-                right_to_left = {n for n in right_nodes if len(nodes[n] & right_nodes) == len(nodes[n] & left_nodes)}
-                if len(left_to_right) > len(right_to_left):
-                    picked: str = left_to_right.pop()
-                    left_nodes.remove(picked)
-                    right_nodes.add(picked)
-                elif right_to_left:
-                    picked: str = right_to_left.pop()
-                    right_nodes.remove(picked)
-                    left_nodes.add(picked)
-
-    return len(left_nodes) * len(right_nodes)
+    
+    left, right = independent_groups(nodes)
+    left = expand(left, nodes, 2)
+    right = expand(right, nodes, 2)
+    
+    # Purge uncuttable edges
+    edges_to_try: list[tuple[str, str]] = [e for e in edges if not set(e).issubset(left) and not set(e).issubset(right)]
+    
+    # Brute force remaining potential edges
+    for i, (c1a, c1b) in enumerate(edges_to_try[:-2]):
+        nodes[c1a].remove(c1b)
+        nodes[c1b].remove(c1a)
+        for j, (c2a, c2b) in enumerate(edges_to_try[i + 1:-1], i + 1):
+            nodes[c2a].remove(c2b)
+            nodes[c2b].remove(c2a)
+            for (c3a, c3b) in edges_to_try[j + 1:]:
+                nodes[c3a].remove(c3b)
+                nodes[c3b].remove(c3a)
+                
+                if c3a not in expand({c3b}, nodes):
+                    left, right = connected_components(nodes)
+                    return len(left) * len(right)
+                    
+                nodes[c3a].add(c3b)
+                nodes[c3b].add(c3a)
+            nodes[c2a].add(c2b)
+            nodes[c2b].add(c2a)
+        nodes[c1a].add(c1b)
+        nodes[c1b].add(c1a)
 
 
 def solve(puzzle_input):
@@ -90,7 +102,7 @@ def solve(puzzle_input):
 if __name__ == "__main__":
     DIR = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None  # 54
+    PART1_TEST_ANSWER = 54
 
     file = pathlib.Path(DIR + 'test.txt')
     if file.exists():
