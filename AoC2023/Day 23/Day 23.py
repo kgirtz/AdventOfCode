@@ -3,22 +3,22 @@ import sys
 import os
 from point import Point
 from typing import Sequence, Iterable
+from collections import defaultdict
 
 
 class TrailMap:
     def __init__(self, trail_map: Sequence[str]) -> None:
-        self.start: Point = Point(trail_map[0].index('.'), 0)
-        self.end: Point = Point(trail_map[-1].index('.'), len(trail_map) - 1)
         self.paths: dict[Point, str] = {}
-        self.neighbor_paths: dict[Point, set[Point]] = {}
-
         for y, line in enumerate(trail_map):
             for x, ch in enumerate(line):
                 if ch != '#':
                     self.paths[Point(x, y)] = ch
 
-        for path in self.paths:
-            self.neighbor_paths[path] = path.neighbors() & self.paths.keys()
+        self.weighted_edges: dict[Point, dict[Point, int]] = self.make_graph()
+
+    def melt_ice(self) -> None:
+        self.paths = {path: '.' for path in self.paths}
+        self.weighted_edges = self.make_graph()
 
     def walkable(self, cur_pos: Point, target: Point) -> bool:
         if target == cur_pos.above():
@@ -30,7 +30,51 @@ class TrailMap:
         if target == cur_pos.right():
             return self.paths[target] != '<'
 
-    def longest_walk(self, cur_pos: Point, end: Point, prev_pos: Point = None, intersections: Iterable[Point] = None, dry: bool = False) -> int:
+    def make_graph(self) -> dict[Point, dict[Point, int]]:
+        outgoing: dict[Point, set[Point]] = defaultdict(set)
+        for path, path_type in self.paths:
+            match path_type:
+                case '^':
+                    if self.paths.get(path.above(), '#') not in ('v', '#'):
+                        outgoing[path].add(path.above())
+                case 'v':
+                    if self.paths.get(path.below(), '#') not in ('^', '#'):
+                        outgoing[path].add(path.below())
+                case '<':
+                    if self.paths.get(path.left(), '#') not in ('>', '#'):
+                        outgoing[path].add(path.left())
+                case '>':
+                    if self.paths.get(path.right(), '#') not in ('<', '#'):
+                        outgoing[path].add(path.right())
+                case _:
+                    for n in path.neighbors():
+                        if n in self.paths and self.walkable(path, n):
+                            outgoing[path].add(n)
+
+        sorted_paths: list[Point] = sorted(self.paths.keys(), key=lambda pt: pt.y)
+        start: Point = sorted_paths[0]
+        end: Point = sorted_paths[-1]
+
+        graph: dict[Point, dict[Point, int]] = {p: {} for p in self.paths if len(outgoing[p]) > 1 or p in (start, end)}
+        for node, edges in graph.items():
+            cur_pos: Point = node
+            for next_step in outgoing[node]:
+                num_steps: int = 1
+                next_steps: set[Point] = outgoing[next_step] - {cur_pos}
+                while len(next_steps) == 1:
+                    num_steps += 1
+                    cur_pos = next_step
+                    next_step = list(next_steps)[0]
+
+                if len(outgoing[next_step]) > 0 or next_step in (start, end):
+                    edges[next_step] = num_steps
+
+
+
+
+        return graph
+
+    def longest_walk(self, cur_pos: Point, end: Point, prev_pos: Point = None, intersections: Iterable[Point] = None) -> int:
         if prev_pos is None:
             prev_pos = cur_pos.above()
         if intersections is None:
@@ -41,22 +85,21 @@ class TrailMap:
         num_steps: int = 0
         while cur_pos != end:
             num_steps += 1
-            next_steps: set[Point] = self.neighbor_paths[cur_pos] - {prev_pos}
+            next_steps: set[Point] = (cur_pos.neighbors() & self.paths.keys()) - {prev_pos}
 
             if len(next_steps) > 1:
                 intersections.add(cur_pos)
-                if not dry:
-                    match self.paths[cur_pos]:
-                        case '.':
-                            next_steps = {step for step in next_steps if self.walkable(cur_pos, step)}
-                        case '^':
-                            next_steps = {cur_pos.above()}
-                        case 'v':
-                            next_steps = {cur_pos.below()}
-                        case '<':
-                            next_steps = {cur_pos.left()}
-                        case '>':
-                            next_steps = {cur_pos.right()}
+                match self.paths[cur_pos]:
+                    case '.':
+                        next_steps = {step for step in next_steps if self.walkable(cur_pos, step)}
+                    case '^':
+                        next_steps = {cur_pos.above()}
+                    case 'v':
+                        next_steps = {cur_pos.below()}
+                    case '<':
+                        next_steps = {cur_pos.left()}
+                    case '>':
+                        next_steps = {cur_pos.right()}
 
             next_steps -= intersections
 
@@ -66,7 +109,7 @@ class TrailMap:
                 case 1:
                     prev_pos, cur_pos = cur_pos, next_steps.pop()
                 case _:
-                    return num_steps + max(self.longest_walk(step, end, cur_pos, intersections, dry) for step in next_steps)
+                    return num_steps + max(self.longest_walk(step, end, cur_pos, intersections) for step in next_steps)
 
         return num_steps
 
@@ -78,12 +121,14 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    return data.longest_walk(data.start, data.end)
+    sorted_paths: list[Point] = sorted(data.paths.keys(), key=lambda pt: pt.y)
+    return data.longest_walk(sorted_paths[0], sorted_paths[-1])
 
 
 def part2(data):
     """Solve part 2"""
-    return data.longest_walk(data.start, data.end, dry=True)
+    data.melt_ice()
+    return part1(data)
 
 
 def solve(puzzle_input):
@@ -91,7 +136,7 @@ def solve(puzzle_input):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = part2(data)
+    solution2 = None # part2(data)
 
     return solution1, solution2
 
