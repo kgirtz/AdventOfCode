@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+import functools
 from point import Point
 from typing import Sequence, Iterable
 from collections import defaultdict
@@ -21,97 +22,100 @@ class TrailMap:
         self.weighted_edges = self.make_graph()
 
     def walkable(self, cur_pos: Point, target: Point) -> bool:
-        if target == cur_pos.above():
+        if target.is_above(cur_pos):
             return self.paths[target] != 'v'
-        if target == cur_pos.below():
+        if target.is_below(cur_pos):
             return self.paths[target] != '^'
-        if target == cur_pos.left():
+        if target.is_left_of(cur_pos):
             return self.paths[target] != '>'
-        if target == cur_pos.right():
+        if target.is_right_of(cur_pos):
             return self.paths[target] != '<'
 
     def make_graph(self) -> dict[Point, dict[Point, int]]:
         outgoing: dict[Point, set[Point]] = defaultdict(set)
-        for path, path_type in self.paths:
+        incoming: dict[Point, set[Point]] = defaultdict(set)
+        for path, path_type in self.paths.items():
             match path_type:
                 case '^':
-                    if self.paths.get(path.above(), '#') not in ('v', '#'):
-                        outgoing[path].add(path.above())
+                    above: Point = path.above()
+                    if self.paths.get(above, '#') not in ('v', '#'):
+                        outgoing[path].add(above)
+                        incoming[above].add(path)
                 case 'v':
-                    if self.paths.get(path.below(), '#') not in ('^', '#'):
-                        outgoing[path].add(path.below())
+                    below: Point = path.below()
+                    if self.paths.get(below, '#') not in ('^', '#'):
+                        outgoing[path].add(below)
+                        incoming[below].add(path)
                 case '<':
-                    if self.paths.get(path.left(), '#') not in ('>', '#'):
-                        outgoing[path].add(path.left())
+                    left: Point = path.left()
+                    if self.paths.get(left, '#') not in ('>', '#'):
+                        outgoing[path].add(left)
+                        incoming[left].add(path)
                 case '>':
-                    if self.paths.get(path.right(), '#') not in ('<', '#'):
-                        outgoing[path].add(path.right())
+                    right: Point = path.right()
+                    if self.paths.get(right, '#') not in ('<', '#'):
+                        outgoing[path].add(right)
+                        incoming[right].add(path)
                 case _:
                     for n in path.neighbors():
                         if n in self.paths and self.walkable(path, n):
                             outgoing[path].add(n)
+                            incoming[n].add(path)
 
         sorted_paths: list[Point] = sorted(self.paths.keys(), key=lambda pt: pt.y)
         start: Point = sorted_paths[0]
         end: Point = sorted_paths[-1]
 
-        graph: dict[Point, dict[Point, int]] = {p: {} for p in self.paths if len(outgoing[p]) > 1 or p in (start, end)}
+        graph: dict[Point, dict[Point, int]] = {start: {}, end: {}}
+        graph.update({p: {} for p in self.paths if len(outgoing[p]) >= 3})
+        graph.update({p: {} for p in self.paths if len(outgoing[p]) == 2 and incoming[p] - outgoing[p]})
+
         for node, edges in graph.items():
-            cur_pos: Point = node
             for next_step in outgoing[node]:
+                cur_pos: Point = node
                 num_steps: int = 1
                 next_steps: set[Point] = outgoing[next_step] - {cur_pos}
                 while len(next_steps) == 1:
                     num_steps += 1
                     cur_pos = next_step
-                    next_step = list(next_steps)[0]
+                    next_step = next_steps.pop()
+                    next_steps = outgoing[next_step] - {cur_pos}
 
-                if len(outgoing[next_step]) > 0 or next_step in (start, end):
-                    edges[next_step] = num_steps
-
-
-
+                if next_step in graph:
+                    if next_step in edges:
+                        edges[next_step] = max(num_steps, edges[next_step])
+                    else:
+                        edges[next_step] = num_steps
 
         return graph
 
-    def longest_walk(self, cur_pos: Point, end: Point, prev_pos: Point = None, intersections: Iterable[Point] = None) -> int:
-        if prev_pos is None:
-            prev_pos = cur_pos.above()
-        if intersections is None:
-            intersections = set()
-        else:
-            intersections = set(intersections)
+    @functools.lru_cache(maxsize=None)
+    def longest_path(self, start: Point, end: Point, remaining: Iterable[Point]) -> int:
+        if start == end:
+            return 0
+        remaining = self.reachable(start, remaining)
+        if end not in remaining:
+            return -1
 
-        num_steps: int = 0
-        while cur_pos != end:
-            num_steps += 1
-            next_steps: set[Point] = (cur_pos.neighbors() & self.paths.keys()) - {prev_pos}
+        longest: int = -1
+        for next_node, distance in self.weighted_edges[start].items():
+            if next_node in remaining:
+                branch_length: int = self.longest_path(next_node, end, tuple(remaining))
+                if branch_length != -1:
+                    longest = max(longest, distance + branch_length)
 
-            if len(next_steps) > 1:
-                intersections.add(cur_pos)
-                match self.paths[cur_pos]:
-                    case '.':
-                        next_steps = {step for step in next_steps if self.walkable(cur_pos, step)}
-                    case '^':
-                        next_steps = {cur_pos.above()}
-                    case 'v':
-                        next_steps = {cur_pos.below()}
-                    case '<':
-                        next_steps = {cur_pos.left()}
-                    case '>':
-                        next_steps = {cur_pos.right()}
+        return longest
 
-            next_steps -= intersections
+    def reachable(self, start: Point, nodes: Iterable[Point]) -> set[Point]:
+        visited: set[Point] = set()
+        to_visit: set[Point] = {start}
+        while to_visit:
+            cur_node: Point = to_visit.pop()
+            visited.add(cur_node)
+            to_visit |= (self.weighted_edges[cur_node].keys() & nodes) - visited
 
-            match len(next_steps):
-                case 0:
-                    return 0
-                case 1:
-                    prev_pos, cur_pos = cur_pos, next_steps.pop()
-                case _:
-                    return num_steps + max(self.longest_walk(step, end, cur_pos, intersections) for step in next_steps)
-
-        return num_steps
+        visited.remove(start)
+        return visited
 
 
 def parse(puzzle_input):
@@ -122,7 +126,7 @@ def parse(puzzle_input):
 def part1(data):
     """Solve part 1"""
     sorted_paths: list[Point] = sorted(data.paths.keys(), key=lambda pt: pt.y)
-    return data.longest_walk(sorted_paths[0], sorted_paths[-1])
+    return data.longest_path(sorted_paths[0], sorted_paths[-1], tuple(data.weighted_edges.keys()))
 
 
 def part2(data):
@@ -136,7 +140,7 @@ def solve(puzzle_input):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = None # part2(data)
+    solution2 = part2(data)
 
     return solution1, solution2
 
