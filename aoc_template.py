@@ -3,7 +3,7 @@ import sys
 import os
 
 
-def parse(puzzle_input):
+def parse(puzzle_input: str):
     """Parse input"""
     return [line for line in puzzle_input.split('\n')]
 
@@ -18,7 +18,7 @@ def part2(data):
     return data
 
 
-def solve(puzzle_input):
+def solve(puzzle_input: str):
     """Solve the puzzle for the given input"""
     data = parse(puzzle_input)
     solution1 = part1(data)
