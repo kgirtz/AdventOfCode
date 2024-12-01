@@ -1,81 +1,77 @@
 import typing
 import math
 
+PointTuple: typing.TypeAlias = tuple[int, int]
+
 
 class Point(typing.NamedTuple):
     x: int = 0
     y: int = 0
 
     def __str__(self) -> str:
-        return f'({self.x}, {self.y})'
+        return str(tuple(self))
 
-    def left(self) -> 'Point':
+    def left(self) -> typing.Self:
         return Point(self.x - 1, self.y)
 
-    def right(self) -> 'Point':
+    def right(self) -> typing.Self:
         return Point(self.x + 1, self.y)
 
-    def above(self) -> 'Point':
+    def above(self) -> typing.Self:
         return Point(self.x, self.y - 1)
 
-    def below(self) -> 'Point':
+    def below(self) -> typing.Self:
         return Point(self.x, self.y + 1)
 
-    def up_left(self) -> 'Point':
-        return Point(self.x - 1, self.y - 1)
+    def up_left(self) -> typing.Self:
+        return self.above().left()
 
-    def down_left(self) -> 'Point':
-        return Point(self.x - 1, self.y + 1)
+    def down_left(self) -> typing.Self:
+        return self.below().left()
 
-    def up_right(self) -> 'Point':
-        return Point(self.x + 1, self.y - 1)
+    def up_right(self) -> typing.Self:
+        return self.above().right()
 
-    def down_right(self) -> 'Point':
-        return Point(self.x + 1, self.y + 1)
+    def down_right(self) -> typing.Self:
+        return self.below().right()
 
-    def is_left_of(self, pt: 'Point') -> bool:
-        return self.x + 1 == pt.x and self.y == pt.y
+    def is_left_of(self, pt: PointTuple) -> bool:
+        return self.right() == pt
 
-    def is_right_of(self, pt: 'Point') -> bool:
-        return self.x - 1 == pt.x and self.y == pt.y
+    def is_right_of(self, pt: PointTuple) -> bool:
+        return self.left() == pt
 
-    def is_above(self, pt: 'Point') -> bool:
-        return self.x == pt.x and self.y + 1 == pt.y
+    def is_above(self, pt: PointTuple) -> bool:
+        return self.below() == pt
 
-    def is_below(self, pt: 'Point') -> bool:
-        return self.x == pt.x and self.y - 1 == pt.y
+    def is_below(self, pt: PointTuple) -> bool:
+        return self.above() == pt
 
-    def is_adjacent_to(self, pt: 'Point') -> bool:
-        return self.is_above(pt) or self.is_below(pt) or self.is_left_of(pt) or self.is_right_of(pt)
+    def is_adjacent(self, pt: PointTuple, *, diagonal: bool = False) -> bool:
+        return pt in self.neighbors(diagonal=diagonal)
 
-    def neighbors(self, *, diagonals: bool = False) -> set['Point']:
-        pts: set[Point] = {
-            self.above(),
-            self.below(),
-            self.left(),
-            self.right()
-                           }
+    def neighbors(self, *, diagonal: bool = False) -> set[typing.Self]:
+        if diagonal:
+            return {self.above(),
+                    self.below(),
+                    self.left(),
+                    self.right(),
+                    self.up_right(),
+                    self.up_left(),
+                    self.down_right(),
+                    self.down_left()}
 
-        if diagonals:
-            pts |= {
-                self.up_right(),
-                self.up_left(),
-                self.down_right(),
-                self.down_left()
-                    }
+        return {self.above(),
+                self.below(),
+                self.left(),
+                self.right()}
 
-        return pts
+    def distance(self, start: PointTuple = (0, 0)) -> float:
+        start = Point(*start)
+        return math.hypot(self.x - start.x, self.y - start.y)
 
-    def distance(self, start: 'Point' = None) -> float:
-        if start is None:
-            start = ORIGIN
-
-        return math.sqrt((self.x - start.x) ** 2 + (self.y - start.y) ** 2)
-
-    def manhattan_distance(self, start: 'Point' = None) -> int:
-        if start is None:
-            start = ORIGIN
-
+    def manhattan_distance(self, start: PointTuple = (0, 0)) -> int:
+        start = Point(*start)
         return abs(self.x - start.x) + abs(self.y - start.y)
 
 
