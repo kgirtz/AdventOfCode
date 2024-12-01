@@ -1,7 +1,7 @@
 import typing
 import math
 
-PointTuple: typing.TypeAlias = tuple[int, int]
+PointTuple: typing.TypeAlias = tuple[int, ...]
 
 
 class Point(typing.NamedTuple):

@@ -1,7 +1,7 @@
 import typing
 import math
 
-CubeTuple: typing.TypeAlias = tuple[int, int]
+CubeTuple: typing.TypeAlias = tuple[int, ...]
 
 
 class Cube(typing.NamedTuple):
