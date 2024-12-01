@@ -28,15 +28,15 @@ def solve(puzzle_input):
     return solution1, solution2
 
 
-if __name__ == "__main__":
-    DIR = f'{os.path.dirname(sys.argv[0])}/'
+if __name__ == '__main__':
+    DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = None
     PART2_TEST_ANSWER = None
 
-    file = pathlib.Path(DIR + 'part1_test.txt')
+    file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
-        puzzle_input = file.read_text().strip()
+        puzzle_input: str = file.read_text().strip()
         assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
 
     file = pathlib.Path(DIR + 'part2_test.txt')
@@ -52,9 +52,9 @@ if __name__ == "__main__":
         if PART2_TEST_ANSWER is not None:
             assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
 
-    for file in ('input.txt',):
-        print(f"{file}:")
-        puzzle_input = pathlib.Path(DIR + file).read_text().strip()
+    for infile in ('input.txt',):
+        print(f'{infile}:')
+        puzzle_input = pathlib.Path(DIR + infile).read_text().strip()
         solutions = solve(puzzle_input)
-        print("\n".join(str(solution) for solution in solutions))
+        print('\n'.join(str(solution) for solution in solutions))
         print()
