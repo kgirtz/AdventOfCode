@@ -5,17 +5,21 @@ import os
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    left: list[int] = [int(line.split()[0]) for line in puzzle_input.split('\n')]
+    right: list[int] = [int(line.split()[1]) for line in puzzle_input.split('\n')]
+    return left, right
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    left, right = data
+    return sum(abs(a - b) for a, b in zip(sorted(left), sorted(right)))
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    left, right = data
+    return sum(a * right.count(a) for a in left)
 
 
 def solve(puzzle_input: str):
@@ -31,8 +35,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 11
+    PART2_TEST_ANSWER = 31
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
