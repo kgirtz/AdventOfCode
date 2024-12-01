@@ -1,6 +1,8 @@
 import typing
 import math
 
+CubeTuple: typing.TypeAlias = tuple[int, int]
+
 
 class Cube(typing.NamedTuple):
     x: int = 0
@@ -8,18 +10,14 @@ class Cube(typing.NamedTuple):
     z: int = 0
 
     def __str__(self) -> str:
-        return f'({self.x}, {self.y}, {self.z})'
+        return str(tuple(self))
 
-    def distance(self, start: 'Cube' = None) -> float:
-        if start is None:
-            start = ORIGIN
+    def distance(self, start: CubeTuple = (0, 0, 0)) -> float:
+        start = Cube(*start)
+        return math.hypot(self.x - start.x, self.y - start.y, self.z - start.z)
 
-        return math.sqrt((self.x - start.x) ** 2 + (self.y - start.y) ** 2 + (self.z - start.z) ** 2)
-
-    def manhattan_distance(self, start: 'Cube' = None) -> int:
-        if start is None:
-            start = ORIGIN
-
+    def manhattan_distance(self, start: CubeTuple = (0, 0, 0)) -> int:
+        start = Cube(*start)
         return abs(self.x - start.x) + abs(self.y - start.y) + abs(self.z - start.z)
 
 
