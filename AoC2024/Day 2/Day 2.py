@@ -1,21 +1,34 @@
 import pathlib
 import sys
 import os
+import itertools
+from typing import Sequence
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    reports: list[str] = puzzle_input.split('\n')
+    return [[int(lvl) for lvl in report.split()] for report in reports]
+
+
+def is_safe(report: Sequence[int]) -> bool:
+    return all(1 <= b - a <= 3 for a, b in itertools.pairwise(report)) or \
+           all(1 <= a - b <= 3 for a, b in itertools.pairwise(report))
+
+
+def is_safe_with_dampener(report: Sequence[int]) -> bool:
+    report = list(report)
+    return any(is_safe(report[:i] + report[i + 1:]) for i in range(len(report)))
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return sum(is_safe(report) for report in data)
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    return sum(is_safe_with_dampener(report) for report in data)
 
 
 def solve(puzzle_input: str):
@@ -31,8 +44,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 2
+    PART2_TEST_ANSWER = 4
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
