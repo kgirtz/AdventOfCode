@@ -1,21 +1,38 @@
 import pathlib
 import sys
 import os
+import re
+from typing import Generator
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.strip()
+
+
+def multiplications(program: str, *, conditionals: bool = False) -> Generator[int, None, None]:
+    enabled: bool = True
+    for m in re.findall(r"(mul\((\d+),(\d+)\)|do\(\)|don't\(\))", program):
+        match m[0].split('(')[0]:
+            case 'do':
+                enabled = True
+            case "don't":
+                enabled = False
+            case 'mul':
+                if not conditionals or enabled:
+                    a, b = m[1:3]
+                    if 1 <= len(a) <= 3 and 1 <= len(b) <= 3:
+                        yield int(a) * int(b)
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return sum(multiplications(data))
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    return sum(multiplications(data, conditionals=True))
 
 
 def solve(puzzle_input: str):
@@ -31,8 +48,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 161
+    PART2_TEST_ANSWER = 48
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
