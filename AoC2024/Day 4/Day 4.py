@@ -2,20 +2,63 @@ import pathlib
 import sys
 import os
 
+from space import Space
+from point import Point
+
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return Space(puzzle_input.split('\n'), 'XMAS')
+
+
+def count_words(word: str, start: Point, s: Space) -> int:
+    assert len(word) > 1 and word[0] == s.tile_at(start)
+
+    directions: tuple[str, ...] = ('right',
+                                   'down_right',
+                                   'below',
+                                   'down_left',
+                                   'left',
+                                   'up_left',
+                                   'above',
+                                   'up_right')
+
+    total: int = 0
+    for d in directions:
+        pt: Point = start
+        word_idx: int = 1
+        next_pt: Point = getattr(pt, d)()
+        while s.valid_point(next_pt) and s.tile_at(next_pt) == word[word_idx]:
+            if word_idx == len(word) - 1:
+                total += 1
+                break
+            pt = next_pt
+            next_pt = getattr(pt, d)()
+            word_idx += 1
+    return total
+
+
+def is_x(word: str, center: Point, s: Space) -> bool:
+    assert word[1] == s.tile_at(center) and len(word) == 3
+    if s.on_edge(center):
+        return False
+
+    corners: set[Point] = s.neighbors(center, diagonal=True) - s.neighbors(center, diagonal=False)
+    return s.tile_at(center.up_left()) != s.tile_at(center.down_right()) and \
+           s.tile_at(center.down_left()) != s.tile_at(center.up_right()) and \
+           all(s.tile_at(c) in (word[0], word[-1]) for c in corners)
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    word: str = 'XMAS'
+    return sum(count_words(word, pt, data) for pt in data.items[word[0]])
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    word: str = 'MAS'
+    return sum(is_x(word, pt, data) for pt in data.items[word[1]])
 
 
 def solve(puzzle_input: str):
@@ -31,8 +74,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 18
+    PART2_TEST_ANSWER = 9
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
