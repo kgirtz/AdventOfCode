@@ -11,9 +11,15 @@ def parse(puzzle_input: str):
     return rules, updates
 
 
-def in_correct_order(update, rules) -> bool:
-    rules = [r for r in rules if len(set(r) & set(update)) == 2]
-    return all(update.index(first) < update.index(second) for first, second in rules)
+def satisfies_rule(update: list[int], rule: tuple[int, int]) -> bool:
+    first, second = rule
+    if first not in update or second not in update:
+        return True
+    return update.index(first) < update.index(second)
+
+
+def in_correct_order(update: list[int], rules: list[tuple[int, int]]) -> bool:
+    return all(satisfies_rule(update, rule) for rule in rules)
 
 
 def fix(update, rules) -> list[int]:
