@@ -5,17 +5,50 @@ import os
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    rule_str, update_str = puzzle_input.split('\n\n')
+    rules: list[tuple[int, ...]] = [tuple(int(u) for u in r.split('|')) for r in rule_str.split('\n')]
+    updates: list[list[int]] = [[int(n) for n in update.split(',')] for update in update_str.split('\n')]
+    return rules, updates
+
+
+def in_correct_order(update, rules) -> bool:
+    rules = [r for r in rules if len(set(r) & set(update)) == 2]
+    return all(update.index(first) < update.index(second) for first, second in rules)
+
+
+def fix(update, rules) -> list[int]:
+    rules = [r for r in rules if len(set(r) & set(update)) == 2]
+    while not in_correct_order(update, rules):
+        for first, second in rules:
+            i_first: int = update.index(first)
+            i_second: int = update.index(second)
+            if i_first > i_second:
+                update[i_first] = second
+                update[i_second] = first
+    return update
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    rules, updates = data
+
+    total: int = 0
+    for update in updates:
+        if in_correct_order(update, rules):
+            total += update[len(update) // 2]
+    return total
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    rules, updates = data
+
+    total: int = 0
+    for update in updates:
+        if not in_correct_order(update, rules):
+            correct_order: list[int] = fix(update, rules)
+            total += correct_order[len(correct_order) // 2]
+    return total
 
 
 def solve(puzzle_input: str):
@@ -31,8 +64,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 143
+    PART2_TEST_ANSWER = 123
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
