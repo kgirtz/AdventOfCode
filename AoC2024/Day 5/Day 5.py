@@ -1,60 +1,57 @@
 import pathlib
 import sys
 import os
+from typing import Sequence, Iterable, NamedTuple
+
+
+class Rule(NamedTuple):
+    first: int
+    second: int
+
+    def satisfied(self, s: Sequence[int]) -> bool:
+        try:
+            return s.index(self.first) < s.index(self.second)
+        except ValueError:
+            return True
 
 
 def parse(puzzle_input: str):
     """Parse input"""
     rule_str, update_str = puzzle_input.split('\n\n')
-    rules: list[tuple[int, ...]] = [tuple(int(u) for u in r.split('|')) for r in rule_str.split('\n')]
+    rules: list[tuple[int, ...]] = [Rule(*(int(u) for u in r.split('|'))) for r in rule_str.split('\n')]
     updates: list[list[int]] = [[int(n) for n in update.split(',')] for update in update_str.split('\n')]
     return rules, updates
 
 
-def satisfies_rule(update: list[int], rule: tuple[int, int]) -> bool:
-    first, second = rule
-    if first not in update or second not in update:
-        return True
-    return update.index(first) < update.index(second)
+def middle(s: Sequence[int]) -> int:
+    return s[len(s) // 2]
 
 
-def in_correct_order(update: list[int], rules: list[tuple[int, int]]) -> bool:
-    return all(satisfies_rule(update, rule) for rule in rules)
+def in_correct_order(update: Sequence[int], rules: Iterable[Rule]) -> bool:
+    return all(rule.satisfied(update) for rule in rules)
 
 
-def fix(update, rules) -> list[int]:
-    rules = [r for r in rules if len(set(r) & set(update)) == 2]
+def fix(update: Sequence[int], rules: Iterable[Rule]) -> list[int]:
+    update = list(update)
     while not in_correct_order(update, rules):
-        for first, second in rules:
-            i_first: int = update.index(first)
-            i_second: int = update.index(second)
-            if i_first > i_second:
-                update[i_first] = second
-                update[i_second] = first
+        for rule in rules:
+            if not rule.satisfied(update):
+                i: int = update.index(rule.first)
+                j: int = update.index(rule.second)
+                update[i], update[j] = update[j], update[i]
     return update
 
 
 def part1(data):
     """Solve part 1"""
     rules, updates = data
-
-    total: int = 0
-    for update in updates:
-        if in_correct_order(update, rules):
-            total += update[len(update) // 2]
-    return total
+    return sum(middle(update) for update in updates if in_correct_order(update, rules))
 
 
 def part2(data):
     """Solve part 2"""
     rules, updates = data
-
-    total: int = 0
-    for update in updates:
-        if not in_correct_order(update, rules):
-            correct_order: list[int] = fix(update, rules)
-            total += correct_order[len(correct_order) // 2]
-    return total
+    return sum(middle(fix(update, rules)) for update in updates if not in_correct_order(update, rules))
 
 
 def solve(puzzle_input: str):
