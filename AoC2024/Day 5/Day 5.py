@@ -27,13 +27,13 @@ def middle(s: Sequence[int]) -> int:
     return s[len(s) // 2]
 
 
-def in_correct_order(update: Sequence[int], rules: Iterable[Rule]) -> bool:
+def satisfies_all_rules(update: Sequence[int], rules: Iterable[Rule]) -> bool:
     return all(rule.satisfied(update) for rule in rules)
 
 
 def fix(update: Sequence[int], rules: Iterable[Rule]) -> list[int]:
     update = list(update)
-    while not in_correct_order(update, rules):
+    while not satisfies_all_rules(update, rules):
         for rule in rules:
             if not rule.satisfied(update):
                 i: int = update.index(rule.first)
@@ -45,13 +45,13 @@ def fix(update: Sequence[int], rules: Iterable[Rule]) -> list[int]:
 def part1(data):
     """Solve part 1"""
     rules, updates = data
-    return sum(middle(update) for update in updates if in_correct_order(update, rules))
+    return sum(middle(update) for update in updates if satisfies_all_rules(update, rules))
 
 
 def part2(data):
     """Solve part 2"""
     rules, updates = data
-    return sum(middle(fix(update, rules)) for update in updates if not in_correct_order(update, rules))
+    return sum(middle(fix(update, rules)) for update in updates if not satisfies_all_rules(update, rules))
 
 
 def solve(puzzle_input: str):
