@@ -53,5 +53,5 @@ class Space:
     def on_right_edge(self, pt: PointTuple) -> bool:
         return Point(*pt).x == self.width - 1
 
-    def neighbors(self, pt: PointTuple, *, diagonal: bool = False) -> set[Point]:
-        return {n for n in Point(*pt).neighbors(diagonal=diagonal) if self.valid_point(n)}
+    def neighbors(self, pt: PointTuple, *args, **kwargs) -> set[Point]:
+        return {n for n in Point(*pt).neighbors(*args, **kwargs) if self.valid_point(n)}

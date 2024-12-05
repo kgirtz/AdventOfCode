@@ -47,11 +47,17 @@ class Point(typing.NamedTuple):
     def is_below(self, pt: PointTuple) -> bool:
         return self.above() == pt
 
-    def is_adjacent(self, pt: PointTuple, *, diagonal: bool = False) -> bool:
-        return pt in self.neighbors(diagonal=diagonal)
+    def is_adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
+        return pt in self.neighbors(include_corners=include_corners)
 
-    def neighbors(self, *, diagonal: bool = False) -> set[typing.Self]:
-        if diagonal:
+    def neighbors(self, *, include_corners: bool = False, corners_only: bool = False) -> set[typing.Self]:
+        if corners_only:
+            return {self.up_right(),
+                    self.up_left(),
+                    self.down_right(),
+                    self.down_left()}
+
+        if include_corners:
             return {self.above(),
                     self.below(),
                     self.left(),

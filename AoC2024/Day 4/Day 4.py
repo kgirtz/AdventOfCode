@@ -43,10 +43,9 @@ def is_x(word: str, center: Point, s: Space) -> bool:
     if s.on_edge(center):
         return False
 
-    corners: set[Point] = s.neighbors(center, diagonal=True) - s.neighbors(center, diagonal=False)
     return s[center.up_left()] != s[center.down_right()] and \
            s[center.down_left()] != s[center.up_right()] and \
-           all(s[c] in (word[0], word[-1]) for c in corners)
+           all(s[c] in (word[0], word[-1]) for c in center.neighbors(corners_only=True))
 
 
 def part1(data):
