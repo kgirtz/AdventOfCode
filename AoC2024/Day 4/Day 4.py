@@ -12,7 +12,7 @@ def parse(puzzle_input: str):
 
 
 def count_words(word: str, start: Point, s: Space) -> int:
-    assert len(word) > 1 and word[0] == s.tile_at(start)
+    assert len(word) > 1 and word[0] == s[start]
 
     directions: tuple[str, ...] = ('right',
                                    'down_right',
@@ -28,7 +28,7 @@ def count_words(word: str, start: Point, s: Space) -> int:
         pt: Point = start
         word_idx: int = 1
         next_pt: Point = getattr(pt, d)()
-        while s.valid_point(next_pt) and s.tile_at(next_pt) == word[word_idx]:
+        while s.valid_point(next_pt) and s[next_pt] == word[word_idx]:
             if word_idx == len(word) - 1:
                 total += 1
                 break
@@ -39,14 +39,14 @@ def count_words(word: str, start: Point, s: Space) -> int:
 
 
 def is_x(word: str, center: Point, s: Space) -> bool:
-    assert word[1] == s.tile_at(center) and len(word) == 3
+    assert word[1] == s[center] and len(word) == 3
     if s.on_edge(center):
         return False
 
     corners: set[Point] = s.neighbors(center, diagonal=True) - s.neighbors(center, diagonal=False)
-    return s.tile_at(center.up_left()) != s.tile_at(center.down_right()) and \
-           s.tile_at(center.down_left()) != s.tile_at(center.up_right()) and \
-           all(s.tile_at(c) in (word[0], word[-1]) for c in corners)
+    return s[center.up_left()] != s[center.down_right()] and \
+           s[center.down_left()] != s[center.up_right()] and \
+           all(s[c] in (word[0], word[-1]) for c in corners)
 
 
 def part1(data):

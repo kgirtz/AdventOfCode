@@ -27,11 +27,8 @@ class Space:
     def __str__(self) -> str:
         return '\n'.join(self.tiles)
 
-    def __getitem__(self, item) -> str:
-        return self.tile_at(item)
-
-    def tile_at(self, pt: PointTuple) -> str:
-        pt = Point(*pt)
+    def __getitem__(self, item: PointTuple) -> str:
+        pt = Point(*item)
         value: str = self.tiles[pt.y][pt.x]
         return int(value) if self.integer_values else value
 
