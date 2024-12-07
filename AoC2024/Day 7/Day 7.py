@@ -1,13 +1,13 @@
 import pathlib
 import sys
 import os
+import itertools
 from typing import Sequence, Callable, Iterable
 from operator import add, mul
-from itertools import product
 
 
-def concat(a: int, b: int) -> int:
-    return int(str(a) + str(b))
+def concat(a: int, b: int, /) -> int:
+    return int(f'{a}{b}')
 
 
 def parse(puzzle_input: str):
@@ -18,20 +18,18 @@ def parse(puzzle_input: str):
     return zip(test_values, remaining)
 
 
-def evaluate(nums: Sequence[int], ops: Sequence[Callable]) -> int:
-    assert len(nums) == len(ops) + 1
+def evaluates_to(nums: Sequence[int], ops: Sequence[Callable[[int, int], int]], test_value: int) -> bool:
     value: int = nums[0]
-    for num, op in zip(nums[1:], ops):
+    for num, op in zip(nums[1:], ops, strict=True):
+        if value > test_value:
+            break
         value = op(value, num)
-    return value
+    return value == test_value
 
 
 def could_be_true(test_value: int, nums: Sequence[int], ops: Iterable[Callable]) -> bool:
-    num_operators: int = len(nums) - 1
-    for ops in product(ops, repeat=num_operators):
-        if test_value == evaluate(nums, ops):
-            return True
-    return False
+    num_ops: int = len(nums) - 1
+    return any(evaluates_to(nums, combo, test_value) for combo in itertools.product(ops, repeat=num_ops))
 
 
 def part1(data):
@@ -41,13 +39,7 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    total: int = 0
-    for tv, nums in data:
-        if could_be_true(tv, nums, (add, mul)):
-            total += tv
-        elif could_be_true(tv, nums, (add, mul, concat)):
-            total += tv
-    return total
+    return sum(tv for tv, nums in data if could_be_true(tv, nums, (add, mul, concat)))
 
 
 def solve(puzzle_input: str):
