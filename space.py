@@ -55,3 +55,8 @@ class Space:
 
     def neighbors(self, pt: PointTuple, *args, **kwargs) -> set[Point]:
         return {n for n in Point(*pt).neighbors(*args, **kwargs) if self.valid_point(n)}
+
+    def initial_position(self, value: str) -> Point:
+        pts: set[Point] = self.items[value]
+        assert len(pts) == 1
+        return tuple(pts)[0]
