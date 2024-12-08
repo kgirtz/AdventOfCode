@@ -1,7 +1,10 @@
+import itertools
 import pathlib
 import sys
 import os
 from collections import defaultdict
+
+from numpy.random.mtrand import Sequence
 
 from point import Point
 from space import Space
@@ -32,6 +35,26 @@ def get_next(pos: Point, direction: str) -> Point:
             raise ValueError('invalid direction')
 
 
+def next_stop(pos: Point, direction: str, s: Space) -> (Point, str):
+    match direction:
+        case '^':
+            objects: list[int] = sorted((pt.y + 1 for pt in s.items['#'] if pt.x == pos.x and pt.y < pos.y))
+            stop: Point = Point(pos.x, objects[-1] if objects else 0)
+            return stop, '>'
+        case '>':
+            objects: list[int] = sorted((pt.x - 1 for pt in s.items['#'] if pt.x > pos.x and pt.y == pos.y))
+            stop: Point = Point(objects[0] if objects else s.width - 1, pos.y)
+            return stop, 'v'
+        case 'v':
+            objects: list[int] = sorted((pt.y - 1 for pt in s.items['#'] if pt.x == pos.x and pt.y > pos.y))
+            stop: Point = Point(pos.x, objects[0] if objects else s.height - 1)
+            return stop, '<'
+        case '<':
+            objects: list[int] = sorted((pt.x + 1 for pt in s.items['#'] if pt.x < pos.x and pt.y == pos.y))
+            stop: Point = Point(objects[-1] if objects else 0, pos.y)
+            return stop, '^'
+
+
 def path(s: Space) -> set[Point]:
     visited: set[Point] = set()
     cur_dir: str = '^'
@@ -39,12 +62,26 @@ def path(s: Space) -> set[Point]:
     while s.valid_point(cur_pos):
         visited.add(cur_pos)
         next_pos: Point = get_next(cur_pos, cur_dir)
-        if next_pos in s.items['#']:
+        while next_pos in s.items['#']:
             cur_dir = turn_right[cur_dir]
-            cur_pos = get_next(cur_pos, cur_dir)
-        else:
-            cur_pos = next_pos
+            next_pos = get_next(cur_pos, cur_dir)
+        cur_pos = next_pos
     return visited
+
+
+def path_turns(s: Space) -> list[Point]:
+    cur_dir: str = '^'
+    cur_pos: Point = s.initial_position(cur_dir)
+    turns: list[Point] = [cur_pos]
+    while True:
+        cur_pos, cur_dir = next_stop(cur_pos, cur_dir, s)
+        turns.append(cur_pos)
+        if s.on_edge(cur_pos):
+            return turns
+
+
+def path_length(turns: Sequence[Point]) -> int:
+    return sum(start.manhattan_distance(end) - 1 for start, end in itertools.pairwise(turns)) + 1
 
 
 def loops(s: Space) -> bool:
@@ -54,11 +91,10 @@ def loops(s: Space) -> bool:
     while s.valid_point(cur_pos):
         visited[cur_pos].add(cur_dir)
         next_pos: Point = get_next(cur_pos, cur_dir)
-        if next_pos in s.items['#']:
+        while next_pos in s.items['#']:
             cur_dir = turn_right[cur_dir]
-            cur_pos = get_next(cur_pos, cur_dir)
-        else:
-            cur_pos = next_pos
+            next_pos = get_next(cur_pos, cur_dir)
+        cur_pos = next_pos
 
         if cur_dir in visited[cur_pos]:
             return True
@@ -68,14 +104,14 @@ def loops(s: Space) -> bool:
 
 def part1(data):
     """Solve part 1"""
-    s: Space = Space(data, '^#')
+    s: Space = Space(data)
 
     return len(path(s))
 
 
 def part2(data):
-    """Solve part 2"""
-    s: Space = Space(data, '^#')
+    """Solve part 2"""  # 1920 is too high
+    s: Space = Space(data)
 
     num_loops: int = 0
     possible: set[Point] = path(s) - {s.initial_position('^')}
