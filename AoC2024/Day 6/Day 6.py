@@ -1,125 +1,91 @@
-import itertools
 import pathlib
 import sys
 import os
 from collections import defaultdict
 
-from numpy.random.mtrand import Sequence
-
 from point import Point
 from space import Space
 
-
-turn_right: dict[str, str] = {'^': '>',
+TURN_RIGHT: dict[str, str] = {'^': '>',
                               '>': 'v',
                               'v': '<',
                               '<': '^'}
 
 
+class Lab(Space):
+    def __init__(self, in_put) -> None:
+        super().__init__(in_put)
+
+        self.obstacles: set[Point] = self.items['#']
+        self.guard_starting_position: Point = self.initial_position('^')
+
+    def path(self) -> set[Point]:
+        visited: set[Point] = set()
+        cur_dir: str = '^'
+        cur_pos: Point = self.guard_starting_position
+        while self.valid_point(cur_pos):
+            visited.add(cur_pos)
+            next_pos: Point = self.get_next(cur_pos, cur_dir)
+            while next_pos in self.obstacles:
+                cur_dir = TURN_RIGHT[cur_dir]
+                next_pos = self.get_next(cur_pos, cur_dir)
+            cur_pos = next_pos
+        return visited
+
+    def loops(self) -> bool:
+        visited: dict[Point, set[str]] = defaultdict(set)
+        cur_dir: str = '^'
+        cur_pos: Point = self.guard_starting_position
+        while self.valid_point(cur_pos):
+            visited[cur_pos].add(cur_dir)
+            next_pos: Point = self.get_next(cur_pos, cur_dir)
+            while next_pos in self.obstacles:
+                cur_dir = TURN_RIGHT[cur_dir]
+                next_pos = self.get_next(cur_pos, cur_dir)
+            cur_pos = next_pos
+
+            if cur_dir in visited[cur_pos]:
+                return True
+
+        return False
+
+    @staticmethod
+    def get_next(pos: Point, direction: str) -> Point:
+        match direction:
+            case '^':
+                return pos.above()
+            case '>':
+                return pos.right()
+            case 'v':
+                return pos.below()
+            case '<':
+                return pos.left()
+            case _:
+                raise ValueError('invalid direction')
+
+
 def parse(puzzle_input: str):
     """Parse input"""
-    return puzzle_input.split('\n')
-
-
-def get_next(pos: Point, direction: str) -> Point:
-    match direction:
-        case '^':
-            return pos.above()
-        case '>':
-            return pos.right()
-        case 'v':
-            return pos.below()
-        case '<':
-            return pos.left()
-        case _:
-            raise ValueError('invalid direction')
-
-
-def next_stop(pos: Point, direction: str, s: Space) -> (Point, str):
-    match direction:
-        case '^':
-            objects: list[int] = sorted((pt.y + 1 for pt in s.items['#'] if pt.x == pos.x and pt.y < pos.y))
-            stop: Point = Point(pos.x, objects[-1] if objects else 0)
-            return stop, '>'
-        case '>':
-            objects: list[int] = sorted((pt.x - 1 for pt in s.items['#'] if pt.x > pos.x and pt.y == pos.y))
-            stop: Point = Point(objects[0] if objects else s.width - 1, pos.y)
-            return stop, 'v'
-        case 'v':
-            objects: list[int] = sorted((pt.y - 1 for pt in s.items['#'] if pt.x == pos.x and pt.y > pos.y))
-            stop: Point = Point(pos.x, objects[0] if objects else s.height - 1)
-            return stop, '<'
-        case '<':
-            objects: list[int] = sorted((pt.x + 1 for pt in s.items['#'] if pt.x < pos.x and pt.y == pos.y))
-            stop: Point = Point(objects[-1] if objects else 0, pos.y)
-            return stop, '^'
-
-
-def path(s: Space) -> set[Point]:
-    visited: set[Point] = set()
-    cur_dir: str = '^'
-    cur_pos: Point = s.initial_position(cur_dir)
-    while s.valid_point(cur_pos):
-        visited.add(cur_pos)
-        next_pos: Point = get_next(cur_pos, cur_dir)
-        while next_pos in s.items['#']:
-            cur_dir = turn_right[cur_dir]
-            next_pos = get_next(cur_pos, cur_dir)
-        cur_pos = next_pos
-    return visited
-
-
-def path_turns(s: Space) -> list[Point]:
-    cur_dir: str = '^'
-    cur_pos: Point = s.initial_position(cur_dir)
-    turns: list[Point] = [cur_pos]
-    while True:
-        cur_pos, cur_dir = next_stop(cur_pos, cur_dir, s)
-        turns.append(cur_pos)
-        if s.on_edge(cur_pos):
-            return turns
-
-
-def path_length(turns: Sequence[Point]) -> int:
-    return sum(start.manhattan_distance(end) - 1 for start, end in itertools.pairwise(turns)) + 1
-
-
-def loops(s: Space) -> bool:
-    visited: dict[Point, set[str]] = defaultdict(set)
-    cur_dir: str = '^'
-    cur_pos: Point = s.initial_position(cur_dir)
-    while s.valid_point(cur_pos):
-        visited[cur_pos].add(cur_dir)
-        next_pos: Point = get_next(cur_pos, cur_dir)
-        while next_pos in s.items['#']:
-            cur_dir = turn_right[cur_dir]
-            next_pos = get_next(cur_pos, cur_dir)
-        cur_pos = next_pos
-
-        if cur_dir in visited[cur_pos]:
-            return True
-
-    return False
+    return puzzle_input
 
 
 def part1(data):
     """Solve part 1"""
-    s: Space = Space(data)
-
-    return len(path(s))
+    return len(Lab(data).path())
 
 
 def part2(data):
-    """Solve part 2"""  # 1920 is too high
-    s: Space = Space(data)
+    """Solve part 2"""
+    lab: Lab = Lab(data)
 
     num_loops: int = 0
-    possible: set[Point] = path(s) - {s.initial_position('^')}
+    possible: set[Point] = lab.path()
+    possible.remove(lab.guard_starting_position)
     for pt in possible:
-        s.items['#'].add(pt)
-        if loops(s):
+        lab.obstacles.add(pt)
+        if lab.loops():
             num_loops += 1
-        s.items['#'].remove(pt)
+        lab.obstacles.remove(pt)
     return num_loops
 
 
