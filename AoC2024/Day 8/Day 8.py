@@ -35,7 +35,7 @@ class AntennaMap(Space):
                 antinodes.add(node)
                 node = Point(node.x - run, node.y - rise)
         else:
-            node: Point = Point(a.x - run, a.y - rise)
+            node = Point(a.x - run, a.y - rise)
             if self.valid_point(node):
                 antinodes.add(node)
 

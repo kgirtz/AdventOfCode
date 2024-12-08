@@ -20,7 +20,7 @@ class Space:
 
         for y, line in enumerate(space_str):
             for x, tile in enumerate(line):
-                if not item_types or tile in item_types:
+                if (not item_types and tile != self.default) or tile in item_types:
                     self.items[tile].add(Point(x, y))
         self.items = dict(self.items)
 
