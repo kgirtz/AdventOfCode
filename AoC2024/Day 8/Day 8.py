@@ -7,85 +7,62 @@ from point import Point
 
 
 class AntennaMap(Space):
-    def __init__(self, input_map) -> None:
-        super().__init__(input_map)
-
-        self.locations: dict[str, set[Point]] = self.items
-
-    def frequencies(self) -> set[str]:
-        return set(self.locations.keys())
-
-    def calculate_antinodes(self, a: Point, b: Point) -> set[Point]:
-        if a == b:
-            return set()
-
-        # a to b
-        rise: int = 2 * (b.y - a.y)
-        run: int = 2 * (b.x - a.x)
-        node_ab: Point = Point(a.x + run, a.y + rise)
-
-        # b to a
-        rise = 2 * (a.y - b.y)
-        run = 2 * (a.x - b.x)
-        node_ba: Point = Point(b.x + run, b.y + rise)
-
-        return {node for node in (node_ab, node_ba) if self.valid_point(node)}
-
-    def calculate_harmonic_antinodes(self, a: Point, b: Point) -> set[Point]:
+    def calculate_antinodes(self, a: Point, b: Point, harmonics: bool = False) -> set[Point]:
         if a == b:
             return set()
 
         antinodes: set[Point] = set()
 
         # a to b
-        rise: int = b.y - a.y
         run: int = b.x - a.x
-        cur_node: Point = a
+        rise: int = b.y - a.y
 
-        while self.valid_point(cur_node):
-            antinodes.add(cur_node)
-            cur_node = Point(cur_node.x + run, cur_node.y + rise)
+        # Toward b
+        if harmonics:
+            node: Point = a
+            while self.valid_point(node):
+                antinodes.add(node)
+                node = Point(node.x + run, node.y + rise)
+        else:
+            node = Point(a.x + 2 * run, a.y + 2 * rise)
+            if self.valid_point(node):
+                antinodes.add(node)
 
-        cur_node = a
-        while self.valid_point(cur_node):
-            antinodes.add(cur_node)
-            cur_node = Point(cur_node.x - run, cur_node.y - rise)
+        # Away from b
+        if harmonics:
+            node = a
+            while self.valid_point(node):
+                antinodes.add(node)
+                node = Point(node.x - run, node.y - rise)
+        else:
+            node: Point = Point(a.x - run, a.y - rise)
+            if self.valid_point(node):
+                antinodes.add(node)
 
         return antinodes
 
-    def find_antinodes(self, freq: str, *, harmonics: bool = False) -> set[Point]:
+    def find_all_antinodes(self, *, harmonics: bool = False) -> set[Point]:
         antinodes: set[Point] = set()
-        antennas: list[Point] = list(self.locations[freq])
-        for i, a in enumerate(antennas[:-1]):
-            for b in antennas[i + 1:]:
-                if harmonics:
-                    antinodes.update(self.calculate_harmonic_antinodes(a, b))
-                else:
-                    antinodes.update(self.calculate_antinodes(a, b))
+        for antennas in self.items.values():
+            for a in antennas:
+                for b in antennas:
+                    antinodes.update(self.calculate_antinodes(a, b, harmonics))
         return antinodes
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return puzzle_input.split('\n')
+    return puzzle_input
 
 
 def part1(data):
     """Solve part 1"""
-    antennas: AntennaMap = AntennaMap(data)
-    antinodes: set[Point] = set()
-    for f in antennas.frequencies():
-        antinodes.update(antennas.find_antinodes(f))
-    return len(antinodes)
+    return len(AntennaMap(data).find_all_antinodes())
 
 
 def part2(data):
     """Solve part 2"""
-    antennas: AntennaMap = AntennaMap(data)
-    antinodes: set[Point] = set()
-    for f in antennas.frequencies():
-        antinodes.update(antennas.find_antinodes(f, harmonics=True))
-    return len(antinodes)
+    return len(AntennaMap(data).find_all_antinodes(harmonics=True))
 
 
 def solve(puzzle_input: str):
