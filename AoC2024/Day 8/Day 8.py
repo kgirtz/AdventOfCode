@@ -14,8 +14,8 @@ class AntennaMap(Space):
         antinodes: set[Point] = set()
 
         # a to b
-        run: int = b.x - a.x
-        rise: int = b.y - a.y
+        run: int = a.run(b)
+        rise: int = a.rise(b)
 
         # Toward b
         if harmonics:
