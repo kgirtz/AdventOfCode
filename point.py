@@ -80,5 +80,13 @@ class Point(typing.NamedTuple):
         start = Point(*start)
         return abs(self.x - start.x) + abs(self.y - start.y)
 
+    def run(self, other: PointTuple) -> int:
+        other = Point(*other)
+        return other.x - self.x
+
+    def rise(self, other: PointTuple) -> int:
+        other = Point(*other)
+        return other.y - self.y
+
 
 ORIGIN: Point = Point(0, 0)
