@@ -10,6 +10,7 @@ class Chunk:
         self.address: int = address
         self.length: int = length
         self.contents: int | None = data
+        self.free_space: int = -1
         self.next: Self | None = None
         self.prev: Self | None = None
 
@@ -21,11 +22,6 @@ class Chunk:
 
     def next_address(self) -> int:
         return self.address + self.length
-
-    def following_free_space(self) -> int:
-        if self.next is None:
-            return -1
-        return self.next.address - self.next_address()
 
     def checksum(self) -> int:
         if self.contents is None:
@@ -43,12 +39,27 @@ class Chunk:
             self.next.prev = self.prev
         if self.prev is not None:
             self.prev.next = self.next
+            if self.next is None:
+                self.prev.free_space = -1
+            else:
+                self.prev.free_space = self.prev.next.address - self.prev.next_address()
         self.next = None
         self.prev = None
+        self.free_space = -1
 
     def insert_after(self, chunk: Self) -> None:
+        # Update chunk
         chunk.next, chunk.prev = self.next, self
+        if chunk.next is None:
+            chunk.free_space = -1
+        else:
+            chunk.free_space = chunk.next.address - chunk.next_address()
+
+        # Update self
         self.next = chunk
+        self.free_space = self.next.address - self.next_address()
+
+        # Update next
         if chunk.next is not None:
             chunk.next.prev = chunk
 
@@ -58,7 +69,6 @@ class Disk:
         self.allocated: Chunk = Chunk(0, int(disk_map[0]), 0)
         self.head: Chunk = self.allocated
         self.tail: Chunk = self.allocated
-        self.first_free_space: Chunk = self.head
         self.free_chunks: dict[int, list[Chunk]] = defaultdict(list)
 
         cur_addr: int = self.head.length
@@ -78,10 +88,10 @@ class Disk:
     def filesystem_checksum(self) -> int:
         return sum(chunk.checksum() for chunk in self.allocated.walk())
 
-    def update_first_free_space(self) -> None:
-        while self.first_free_space != self.tail and not self.first_free_space.following_free_space():
-            self.first_free_space = self.first_free_space.next
-        """
+    """def update_first_free_space(self) -> None:
+        while self.first_free != self.tail and not self.first_free.free_space:
+            self.first_free = self.first_free.next
+        
         for i in self.free_chunks:
             if self.free_chunks[i] and not self.free_chunks[i][0].following_free_space():
                 self.free_chunks[i] = self.free_chunks[i][1:]
@@ -94,38 +104,52 @@ class Disk:
                 self.free_chunks[i] = self.free_chunks[i][1:]
                 self.free_chunks[actual_length].append(modified_space)
                 self.free_chunks[actual_length].sort(key=lambda chunk: chunk.address)
-        self.first_free_space = min((group[0] for group in self.free_chunks.values()), key=lambda chunk: chunk.address)"""
+        self.first_free = min((group[0] for group in self.free_chunks.values()), key=lambda chunk: chunk.address)"""
 
     def consolidate_memory(self) -> None:
-        while self.tail != self.first_free_space:
-            free_space_length: int = self.first_free_space.following_free_space()
-            if self.tail.length <= free_space_length:
+        first_free: Chunk = self.head
+        while first_free != self.tail and not first_free.free_space:
+            first_free = first_free.next
+
+        while self.tail != first_free:
+            if self.tail.length <= first_free.free_space:
                 self.tail = self.tail.prev
                 chunk: Chunk = self.tail.next
                 chunk.unlink()
-                self.first_free_space.insert_after(chunk)
-                chunk.address = self.first_free_space.next_address()
+                chunk.address = first_free.next_address()
+                first_free.insert_after(chunk)
             else:
-                self.first_free_space.insert_after(Chunk(self.first_free_space.next_address(), free_space_length, self.tail.contents))
-                self.tail.length -= free_space_length
+                self.tail.length -= first_free.free_space
+                first_free.insert_after(Chunk(first_free.next_address(), first_free.free_space, self.tail.contents))
 
-            self.update_first_free_space()
+            while first_free != self.tail and not first_free.free_space:
+                first_free = first_free.next
 
     def consolidate_files(self) -> None:
-        while self.tail != self.first_free_space:
-            free_space_length: int = self.first_free_space.following_free_space()
-            if self.tail.length <= free_space_length:
-                self.tail = self.tail.prev
-                chunk: Chunk = self.tail.next
-                chunk.unlink()
-                self.first_free_space.insert_after(chunk)
-                chunk.address = self.first_free_space.next_address()
-            else:
-                self.first_free_space.insert_after(
-                    Chunk(self.first_free_space.next_address(), free_space_length, self.tail.contents))
-                self.tail.length -= free_space_length
+        first_free: Chunk = self.head
 
-            self.update_first_free_space()
+        for i in range(self.tail.contents, 0, -1):
+            file_to_move: Chunk = self.tail
+            while file_to_move.contents != i:
+                file_to_move = file_to_move.prev
+
+            free_chunk: Chunk = first_free
+            while free_chunk is not None and free_chunk.free_space < file_to_move.length:
+                free_chunk = free_chunk.next
+
+            if free_chunk is None or free_chunk.address >= file_to_move.address:
+                continue
+
+            if file_to_move == self.tail and free_chunk != self.tail.prev:
+                self.tail = self.tail.prev
+
+            file_to_move.unlink()
+            file_to_move.address = free_chunk.next_address()
+            free_chunk.insert_after(file_to_move)
+
+            if free_chunk == first_free:
+                while first_free != self.tail and not first_free.free_space:
+                    first_free = first_free.next
 
 
 def parse(puzzle_input: str):
@@ -179,7 +203,7 @@ if __name__ == '__main__':
         if PART1_TEST_ANSWER is not None:
             assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
         if PART2_TEST_ANSWER is not None:
-            ...#assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
+            assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
 
     for infile in ('input.txt',):
         print(f'{infile}:')
