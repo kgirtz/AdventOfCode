@@ -2,7 +2,6 @@ import pathlib
 import sys
 import os
 from typing import Self, Generator
-from collections import defaultdict
 
 
 class Chunk:
@@ -16,9 +15,6 @@ class Chunk:
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(addr={self.address}, len={self.length}, file={self.contents})'
-
-    def __eq__(self, other) -> bool:
-        return self.address == other.address
 
     def next_address(self) -> int:
         return self.address + self.length
@@ -69,7 +65,6 @@ class Disk:
         self.allocated: Chunk = Chunk(0, int(disk_map[0]), 0)
         self.head: Chunk = self.allocated
         self.tail: Chunk = self.allocated
-        self.free_chunks: dict[int, list[Chunk]] = defaultdict(list)
 
         cur_addr: int = self.head.length
         for i, len_str in enumerate(disk_map[1:], 1):
@@ -77,8 +72,6 @@ class Disk:
             if i % 2 == 0:
                 file_id: int = i // 2
                 self.allocate(Chunk(cur_addr, length, file_id))
-            else:
-                self.free_chunks[length].append(self.tail)
             cur_addr += length
 
     def allocate(self, chunk: Chunk) -> None:
@@ -87,24 +80,6 @@ class Disk:
 
     def filesystem_checksum(self) -> int:
         return sum(chunk.checksum() for chunk in self.allocated.walk())
-
-    """def update_first_free_space(self) -> None:
-        while self.first_free != self.tail and not self.first_free.free_space:
-            self.first_free = self.first_free.next
-        
-        for i in self.free_chunks:
-            if self.free_chunks[i] and not self.free_chunks[i][0].following_free_space():
-                self.free_chunks[i] = self.free_chunks[i][1:]
-        for i in self.free_chunks:
-            if not self.free_chunks[i]:
-                continue
-            actual_length: int = self.free_chunks[i][0].length
-            if actual_length != i:
-                modified_space: Chunk = self.free_chunks[i][0]
-                self.free_chunks[i] = self.free_chunks[i][1:]
-                self.free_chunks[actual_length].append(modified_space)
-                self.free_chunks[actual_length].sort(key=lambda chunk: chunk.address)
-        self.first_free = min((group[0] for group in self.free_chunks.values()), key=lambda chunk: chunk.address)"""
 
     def consolidate_memory(self) -> None:
         first_free: Chunk = self.head
@@ -127,7 +102,6 @@ class Disk:
 
     def consolidate_files(self) -> None:
         first_free: Chunk = self.head
-
         for i in range(self.tail.contents, 0, -1):
             file_to_move: Chunk = self.tail
             while file_to_move.contents != i:
@@ -136,6 +110,8 @@ class Disk:
             free_chunk: Chunk = first_free
             while free_chunk is not None and free_chunk.free_space < file_to_move.length:
                 free_chunk = free_chunk.next
+                if free_chunk is not None and free_chunk.address >= file_to_move.address:
+                    break
 
             if free_chunk is None or free_chunk.address >= file_to_move.address:
                 continue
