@@ -1,21 +1,43 @@
 import pathlib
 import sys
 import os
+from typing import Sequence
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.strip().split()
+
+
+def blink(stones: Sequence[str]) -> list[str]:
+    new_stones: list[str] = []
+    for stone in stones:
+        if stone == '0':
+            new_stones.append('1')
+        elif len(stone) % 2 == 0:
+            new_stones.append(stone[:len(stone) // 2])
+            new_stones.append(str(int(stone[len(stone) // 2:])))
+        else:
+            new_stones.append(str(int(stone) * 2024))
+    return new_stones
+
+
+def num_stones_after_blinks(stones: Sequence[str], blinks: int) -> int:
+    stones = list(stones)
+    for i in range(blinks):
+        print(f'Blink {i + 1}')
+        stones = blink(stones)
+    return len(stones)
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return num_stones_after_blinks(data, 25)
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    return num_stones_after_blinks(data, 75)
 
 
 def solve(puzzle_input: str):
@@ -31,7 +53,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 55312
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
