@@ -1,7 +1,7 @@
 import pathlib
 import sys
 import os
-from typing import Sequence
+import functools
 
 
 def parse(puzzle_input: str):
@@ -9,35 +9,29 @@ def parse(puzzle_input: str):
     return puzzle_input.strip().split()
 
 
-def blink(stones: Sequence[str]) -> list[str]:
-    new_stones: list[str] = []
-    for stone in stones:
-        if stone == '0':
-            new_stones.append('1')
-        elif len(stone) % 2 == 0:
-            new_stones.append(stone[:len(stone) // 2])
-            new_stones.append(str(int(stone[len(stone) // 2:])))
-        else:
-            new_stones.append(str(int(stone) * 2024))
-    return new_stones
+@functools.cache
+def num_stones(stone: str, blinks: int) -> int:
+    if blinks == 0:
+        return 1
 
-
-def num_stones_after_blinks(stones: Sequence[str], blinks: int) -> int:
-    stones = list(stones)
-    for i in range(blinks):
-        print(f'Blink {i + 1}')
-        stones = blink(stones)
-    return len(stones)
+    blinks -= 1
+    if stone == '0':
+        return num_stones('1', blinks)
+    elif len(stone) % 2 == 0:
+        half: int = len(stone) // 2
+        return num_stones(stone[:half], blinks) + num_stones(str(int(stone[half:])), blinks)
+    else:
+        return num_stones(str(int(stone) * 2024), blinks)
 
 
 def part1(data):
     """Solve part 1"""
-    return num_stones_after_blinks(data, 25)
+    return sum(num_stones(stone, 25) for stone in data)
 
 
 def part2(data):
     """Solve part 2"""
-    return num_stones_after_blinks(data, 75)
+    return sum(num_stones(stone, 75) for stone in data)
 
 
 def solve(puzzle_input: str):
