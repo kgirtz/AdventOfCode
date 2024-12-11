@@ -2,19 +2,21 @@ import pathlib
 import sys
 import os
 import itertools
+import functools
 from typing import Sequence, Callable, Iterable
 from operator import add, mul
 
 
+@functools.cache
 def concat(a: int, b: int, /) -> int:
-    return int(f'{a}{b}')
+    return int(str(a) + str(b))
 
 
 def parse(puzzle_input: str):
     """Parse input"""
     equations: list[str] = puzzle_input.split('\n')
     test_values: list[int] = [int(e.split(':')[0]) for e in equations]
-    remaining: list[list[int]] = [[int(n) for n in e.split(':')[1].split()] for e in equations]
+    remaining: list[tuple[int, ...]] = [tuple(int(n) for n in e.split(':')[1].split()) for e in equations]
     return zip(test_values, remaining)
 
 
@@ -32,6 +34,33 @@ def could_be_true(test_value: int, nums: Sequence[int], ops: Iterable[Callable])
     return any(evaluates_to(nums, combo, test_value) for combo in itertools.product(ops, repeat=num_ops))
 
 
+def could_be_true_optimized(test_value: int, nums: Sequence[int], ops: Iterable[Callable]) -> bool:
+    num_ops: int = len(nums) - 1
+
+    if mul in ops and test_value % nums[-1] != 0:
+        if concat in ops and not str(test_value).endswith(str(nums[-1])):
+            for combo in itertools.product(ops, repeat=num_ops):
+                if combo[-1] not in (mul, concat) and evaluates_to(nums, combo, test_value):
+                    return True
+            return False
+
+        for combo in itertools.product(ops, repeat=num_ops):
+            if combo[-1] != mul and evaluates_to(nums, combo, test_value):
+                return True
+        return False
+
+    if concat in ops and not str(test_value).endswith(str(nums[-1])):
+        for combo in itertools.product(ops, repeat=num_ops):
+            if combo[-1] != concat and evaluates_to(nums, combo, test_value):
+                return True
+        return False
+
+    for combo in itertools.product(ops, repeat=num_ops):
+        if evaluates_to(nums, combo, test_value):
+            return True
+    return False
+
+
 def part1(data):
     """Solve part 1"""
     return sum(tv for tv, nums in data if could_be_true(tv, nums, (add, mul)))
@@ -39,7 +68,7 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    return sum(tv for tv, nums in data if could_be_true(tv, nums, (add, mul, concat)))
+    return sum(tv for tv, nums in data if could_be_true_optimized(tv, nums, (add, mul, concat)))
 
 
 def solve(puzzle_input: str):
