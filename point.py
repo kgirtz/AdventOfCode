@@ -1,7 +1,16 @@
 import typing
 import math
+import functools
 
 PointTuple: typing.TypeAlias = tuple[int, ...]
+
+
+def accept_tuple(func: typing.Callable) -> typing.Callable:
+    @functools.wraps(func)
+    def wrapper(*points_or_tuples):
+        points: list[Point] = [Point(*t) for t in points_or_tuples]
+        return func(*points)
+    return wrapper
 
 
 class Point(typing.NamedTuple):
@@ -72,20 +81,20 @@ class Point(typing.NamedTuple):
                 self.left(),
                 self.right()}
 
-    def distance(self, start: PointTuple = (0, 0)) -> float:
-        start = Point(*start)
+    @accept_tuple
+    def distance(self, start: typing.Self = (0, 0)) -> float:
         return math.hypot(self.x - start.x, self.y - start.y)
 
-    def manhattan_distance(self, start: PointTuple = (0, 0)) -> int:
-        start = Point(*start)
+    @accept_tuple
+    def manhattan_distance(self, start: typing.Self = (0, 0)) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y)
 
-    def run(self, other: PointTuple) -> int:
-        other = Point(*other)
+    @accept_tuple
+    def run(self, other: typing.Self) -> int:
         return other.x - self.x
 
-    def rise(self, other: PointTuple) -> int:
-        other = Point(*other)
+    @accept_tuple
+    def rise(self, other: typing.Self) -> int:
         return other.y - self.y
 
 
