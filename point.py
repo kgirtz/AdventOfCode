@@ -25,23 +25,23 @@ class Point(typing.NamedTuple):
     def right(self) -> typing.Self:
         return Point(self.x + 1, self.y)
 
-    def above(self) -> typing.Self:
+    def up(self) -> typing.Self:
         return Point(self.x, self.y - 1)
 
-    def below(self) -> typing.Self:
+    def down(self) -> typing.Self:
         return Point(self.x, self.y + 1)
 
     def up_left(self) -> typing.Self:
-        return self.above().left()
+        return self.up().left()
 
     def down_left(self) -> typing.Self:
-        return self.below().left()
+        return self.down().left()
 
     def up_right(self) -> typing.Self:
-        return self.above().right()
+        return self.up().right()
 
     def down_right(self) -> typing.Self:
-        return self.below().right()
+        return self.down().right()
 
     def is_left_of(self, pt: PointTuple) -> bool:
         return self.right() == pt
@@ -50,12 +50,12 @@ class Point(typing.NamedTuple):
         return self.left() == pt
 
     def is_above(self, pt: PointTuple) -> bool:
-        return self.below() == pt
+        return self.down() == pt
 
     def is_below(self, pt: PointTuple) -> bool:
-        return self.above() == pt
+        return self.up() == pt
 
-    def is_adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
+    def adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
         return pt in self.neighbors(include_corners=include_corners)
 
     def neighbors(self, *, include_corners: bool = False, corners_only: bool = False) -> set[typing.Self]:
@@ -66,8 +66,8 @@ class Point(typing.NamedTuple):
                     self.down_left()}
 
         if include_corners:
-            return {self.above(),
-                    self.below(),
+            return {self.up(),
+                    self.down(),
                     self.left(),
                     self.right(),
                     self.up_right(),
@@ -75,8 +75,8 @@ class Point(typing.NamedTuple):
                     self.down_right(),
                     self.down_left()}
 
-        return {self.above(),
-                self.below(),
+        return {self.up(),
+                self.down(),
                 self.left(),
                 self.right()}
 

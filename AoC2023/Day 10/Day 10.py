@@ -21,9 +21,9 @@ class Surface:
 
         # Determine starting pipe type
         pipe_types: set[str] = {'|', '-', 'L', 'F', 'J', '7'}
-        if self.start not in self.connections(self.start.above()):
+        if self.start not in self.connections(self.start.up()):
             pipe_types -= {'|', 'L', 'J'}
-        if self.start not in self.connections(self.start.below()):
+        if self.start not in self.connections(self.start.down()):
             pipe_types -= {'|', '7', 'F'}
         if self.start not in self.connections(self.start.left()):
             pipe_types -= {'-', '7', 'J'}
@@ -61,9 +61,9 @@ class Surface:
 
         tile: str = self.tile_at(pt)
         if tile in ('|', 'J', 'L'):
-            connected_pipes.append(pt.above())
+            connected_pipes.append(pt.up())
         if tile in ('|', 'F', '7'):
-            connected_pipes.append(pt.below())
+            connected_pipes.append(pt.down())
         if tile in ('-', 'J', '7'):
             connected_pipes.append(pt.left())
         if tile in ('-', 'F', 'L'):
@@ -98,32 +98,32 @@ class Surface:
                 case 'F':
                     return {cur.down_right()}
                 case '7':
-                    return {cur.right(), cur.above(), cur.up_right()}
+                    return {cur.right(), cur.up(), cur.up_right()}
 
         elif prev.is_above(cur):
             match self.tile_at(cur):
                 case '|':
                     return {cur.left()}
                 case 'L':
-                    return {cur.left(), cur.below(), cur.down_left()}
+                    return {cur.left(), cur.down(), cur.down_left()}
                 case 'J':
                     return {cur.up_left()}
 
         elif prev.is_left_of(cur):
             match self.tile_at(cur):
                 case '-':
-                    return {cur.below()}
+                    return {cur.down()}
                 case 'J':
-                    return {cur.below(), cur.right(), cur.down_right()}
+                    return {cur.down(), cur.right(), cur.down_right()}
                 case '7':
                     return {cur.down_left()}
 
         elif prev.is_right_of(cur):
             match self.tile_at(cur):
                 case '-':
-                    return {cur.above()}
+                    return {cur.up()}
                 case 'F':
-                    return {cur.above(), cur.left(), cur.up_left()}
+                    return {cur.up(), cur.left(), cur.up_left()}
                 case 'L':
                     return {cur.up_right()}
 

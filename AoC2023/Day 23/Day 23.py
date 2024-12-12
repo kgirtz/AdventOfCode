@@ -37,12 +37,12 @@ class TrailMap:
         for path, path_type in self.paths.items():
             match path_type:
                 case '^':
-                    above: Point = path.above()
+                    above: Point = path.up()
                     if self.paths.get(above, '#') not in ('v', '#'):
                         outgoing[path].add(above)
                         incoming[above].add(path)
                 case 'v':
-                    below: Point = path.below()
+                    below: Point = path.down()
                     if self.paths.get(below, '#') not in ('^', '#'):
                         outgoing[path].add(below)
                         incoming[below].add(path)

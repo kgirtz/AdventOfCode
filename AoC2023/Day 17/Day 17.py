@@ -21,8 +21,8 @@ class HeatLossMap:
         return self.heat_loss[pt.y][pt.x]
 
     def neighbors(self, pt: Point) -> list[tuple[Point, str]]:
-        all_neighbors: list[tuple[Point, str]] = [(pt.above(), '^'),
-                                                  (pt.below(), 'v'),
+        all_neighbors: list[tuple[Point, str]] = [(pt.up(), '^'),
+                                                  (pt.down(), 'v'),
                                                   (pt.left(), '<'),
                                                   (pt.right(), '>')]
         return [n for n in all_neighbors if n[0] in self]
@@ -31,9 +31,9 @@ class HeatLossMap:
     def go_straight(pt: Point, direction: str) -> Point:
         match direction:
             case '^':
-                return pt.above()
+                return pt.up()
             case 'v':
-                return pt.below()
+                return pt.down()
             case '<':
                 return pt.left()
             case '>':
@@ -47,9 +47,9 @@ class HeatLossMap:
             case 'v':
                 return pt.right(), '>'
             case '<':
-                return pt.below(), 'v'
+                return pt.down(), 'v'
             case '>':
-                return pt.above(), '^'
+                return pt.up(), '^'
 
     @staticmethod
     def turn_right(pt: Point, direction: str) -> (Point, str):
@@ -59,9 +59,9 @@ class HeatLossMap:
             case 'v':
                 return pt.left(), '<'
             case '<':
-                return pt.above(), '^'
+                return pt.up(), '^'
             case '>':
-                return pt.below(), 'v'
+                return pt.down(), 'v'
 
     @functools.lru_cache(maxsize=None)
     def minimal_heat_loss(self, start: Point, end: Point, visited: tuple[Point, ...], direction: str = '', can_go_straight: bool = True) -> int:

@@ -46,9 +46,9 @@ class Contraption:
     def propagate_beam(self, cur_pos: Point, direction: str) -> (Point, list[str]):
         match direction:
             case '^':
-                next_pos: Point = cur_pos.above()
+                next_pos: Point = cur_pos.up()
             case 'v':
-                next_pos: Point = cur_pos.below()
+                next_pos: Point = cur_pos.down()
             case '<':
                 next_pos: Point = cur_pos.left()
             case '>':

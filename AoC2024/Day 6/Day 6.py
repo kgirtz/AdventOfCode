@@ -53,11 +53,11 @@ class Lab(Space):
     def get_next(pos: Point, direction: str) -> Point:
         match direction:
             case '^':
-                return pos.above()
+                return pos.up()
             case '>':
                 return pos.right()
             case 'v':
-                return pos.below()
+                return pos.down()
             case '<':
                 return pos.left()
             case _:

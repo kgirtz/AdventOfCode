@@ -36,8 +36,7 @@ class Space:
     def valid_point(self, pt: point.Point) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    @point.accept_tuple
-    def on_edge(self, pt: point.Point) -> bool:
+    def on_edge(self, pt: point.PointTuple) -> bool:
         return self.on_top_edge(pt) or self.on_bottom_edge(pt) or self.on_left_edge(pt) or self.on_right_edge(pt)
 
     @staticmethod
