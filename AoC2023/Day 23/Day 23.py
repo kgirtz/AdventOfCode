@@ -22,13 +22,13 @@ class TrailMap:
         self.weighted_edges = self.make_graph()
 
     def walkable(self, cur_pos: Point, target: Point) -> bool:
-        if target.is_above(cur_pos):
+        if target == cur_pos.up():
             return self.paths[target] != 'v'
-        if target.is_below(cur_pos):
+        if target == cur_pos.down():
             return self.paths[target] != '^'
-        if target.is_left_of(cur_pos):
+        if target == cur_pos.left():
             return self.paths[target] != '>'
-        if target.is_right_of(cur_pos):
+        if target == cur_pos.right():
             return self.paths[target] != '<'
 
     def make_graph(self) -> dict[Point, dict[Point, int]]:

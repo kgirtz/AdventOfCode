@@ -91,7 +91,7 @@ class Surface:
         if not (self.valid_point(prev) and self.valid_point(cur)):
             return set()
 
-        if prev.is_below(cur):
+        if prev == cur.down():
             match self.tile_at(cur):
                 case '|':
                     return {cur.right()}
@@ -100,7 +100,7 @@ class Surface:
                 case '7':
                     return {cur.right(), cur.up(), cur.up_right()}
 
-        elif prev.is_above(cur):
+        elif prev == cur.up():
             match self.tile_at(cur):
                 case '|':
                     return {cur.left()}
@@ -109,7 +109,7 @@ class Surface:
                 case 'J':
                     return {cur.up_left()}
 
-        elif prev.is_left_of(cur):
+        elif prev == cur.left():
             match self.tile_at(cur):
                 case '-':
                     return {cur.down()}
@@ -118,7 +118,7 @@ class Surface:
                 case '7':
                     return {cur.down_left()}
 
-        elif prev.is_right_of(cur):
+        elif prev == cur.right():
             match self.tile_at(cur):
                 case '-':
                     return {cur.up()}

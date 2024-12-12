@@ -50,17 +50,21 @@ class Point(typing.NamedTuple):
     def down_right(self) -> typing.Self:
         return self.down().right()
 
-    def is_left_of(self, pt: PointTuple) -> bool:
-        return self.right() == pt
+    @accept_tuple_method
+    def is_left_of(self, pt: typing.Self) -> bool:
+        return self.x < pt.x
 
-    def is_right_of(self, pt: PointTuple) -> bool:
-        return self.left() == pt
+    @accept_tuple_method
+    def is_right_of(self, pt: typing.Self) -> bool:
+        return self.x > pt.x
 
-    def is_above(self, pt: PointTuple) -> bool:
-        return self.down() == pt
+    @accept_tuple_method
+    def is_above(self, pt: typing.Self) -> bool:
+        return self.y < pt.y
 
-    def is_below(self, pt: PointTuple) -> bool:
-        return self.up() == pt
+    @accept_tuple_method
+    def is_below(self, pt: typing.Self) -> bool:
+        return self.y > pt.y
 
     def adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
         return pt in self.neighbors(include_corners=include_corners)

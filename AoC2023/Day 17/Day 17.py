@@ -119,10 +119,10 @@ class HeatLossMap:
 
 
 def four_in_a_row(pt1: Point, pt2: Point, pt3: Point, pt4: Point) -> bool:
-    return (pt1.is_above(pt2) and pt2.is_above(pt3) and pt3.is_above(pt4)) or \
-           (pt1.is_below(pt2) and pt2.is_below(pt3) and pt3.is_below(pt4)) or \
-           (pt1.is_left_of(pt2) and pt2.is_left_of(pt3) and pt3.is_left_of(pt4)) or \
-           (pt1.is_right_of(pt2) and pt2.is_right_of(pt3) and pt3.is_right_of(pt4))
+    return (pt1 == pt2.up() and pt2 == pt3.up() and pt3 == pt4.up()) or \
+           (pt1 == pt2.down() and pt2 == pt3.down() and pt3 == pt4.down()) or \
+           (pt1 == pt2.left() and pt2 == pt3.left() and pt3 == pt4.left()) or \
+           (pt1 == pt2.right() and pt2 == pt3.right() and pt3 == pt4.right())
 
 
 def parse(puzzle_input):
