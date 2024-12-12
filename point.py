@@ -88,11 +88,11 @@ class Point(typing.NamedTuple):
                 self.right()}
 
     @accept_tuple_method
-    def distance(self, start: typing.Self = (0, 0)) -> float:
+    def distance(self, start: typing.Self) -> float:
         return math.hypot(self.x - start.x, self.y - start.y)
 
     @accept_tuple_method
-    def manhattan_distance(self, start: typing.Self = (0, 0)) -> int:
+    def manhattan_distance(self, start: typing.Self) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y)
 
     @accept_tuple_method
