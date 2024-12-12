@@ -12,6 +12,13 @@ def accept_tuple(func: typing.Callable) -> typing.Callable:
     return wrapper
 
 
+def accept_tuple_method(func: typing.Callable) -> typing.Callable:
+    @functools.wraps(func)
+    def wrapper(self, point_or_tuple: PointTuple, *args, **kwargs):
+        return func(self, Point(*point_or_tuple), *args, **kwargs)
+    return wrapper
+
+
 class Point(typing.NamedTuple):
     x: int = 0
     y: int = 0
@@ -80,19 +87,19 @@ class Point(typing.NamedTuple):
                 self.left(),
                 self.right()}
 
-    @accept_tuple
+    @accept_tuple_method
     def distance(self, start: typing.Self = (0, 0)) -> float:
         return math.hypot(self.x - start.x, self.y - start.y)
 
-    @accept_tuple
+    @accept_tuple_method
     def manhattan_distance(self, start: typing.Self = (0, 0)) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y)
 
-    @accept_tuple
+    @accept_tuple_method
     def run(self, other: typing.Self) -> int:
         return other.x - self.x
 
-    @accept_tuple
+    @accept_tuple_method
     def rise(self, other: typing.Self) -> int:
         return other.y - self.y
 

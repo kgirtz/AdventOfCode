@@ -27,12 +27,12 @@ class Space:
     def __str__(self) -> str:
         return '\n'.join(self.tiles)
 
-    @point.accept_tuple
+    @point.accept_tuple_method
     def __getitem__(self, pt: point.Point) -> str:
         value: str = self.tiles[pt.y][pt.x]
         return int(value) if self.integer_values else value
 
-    @point.accept_tuple
+    @point.accept_tuple_method
     def valid_point(self, pt: point.Point) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
@@ -44,7 +44,7 @@ class Space:
     def on_top_edge(pt: point.Point) -> bool:
         return pt.y == 0
 
-    @point.accept_tuple
+    @point.accept_tuple_method
     def on_bottom_edge(self, pt: point.Point) -> bool:
         return pt.y == self.height - 1
 
@@ -53,11 +53,11 @@ class Space:
     def on_left_edge(pt: point.Point) -> bool:
         return pt.x == 0
 
-    @point.accept_tuple
+    @point.accept_tuple_method
     def on_right_edge(self, pt: point.Point) -> bool:
         return pt.x == self.width - 1
 
-    @point.accept_tuple
+    @point.accept_tuple_method
     def neighbors(self, pt: point.Point, *args, **kwargs) -> set[point.Point]:
         return {n for n in pt.neighbors(*args, **kwargs) if self.valid_point(n)}
 
