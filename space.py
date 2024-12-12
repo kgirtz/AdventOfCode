@@ -1,7 +1,7 @@
 import typing
 import collections
 
-from point import Point, PointTuple
+import point
 
 
 class Space:
@@ -14,49 +14,55 @@ class Space:
         self.height: int = len(space_str)
         self.width: int = len(space_str[0])
         self.tiles: list[str] = space_str
-        self.items: dict[str, set[Point]] = collections.defaultdict(set)
+        self.items: dict[str, set[point.Point]] = collections.defaultdict(set)
         self.integer_values: bool = False
         self.default: str = default
 
         for y, line in enumerate(space_str):
             for x, tile in enumerate(line):
                 if (not item_types and tile != self.default) or tile in item_types:
-                    self.items[tile].add(Point(x, y))
+                    self.items[tile].add(point.Point(x, y))
         self.items = dict(self.items)
 
     def __str__(self) -> str:
         return '\n'.join(self.tiles)
 
-    def __getitem__(self, item: PointTuple) -> str:
-        pt = Point(*item)
+    @point.accept_tuple
+    def __getitem__(self, pt: point.Point) -> str:
         value: str = self.tiles[pt.y][pt.x]
         return int(value) if self.integer_values else value
 
-    def valid_point(self, pt: PointTuple) -> bool:
-        pt = Point(*pt)
+    @point.accept_tuple
+    def valid_point(self, pt: point.Point) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    def on_edge(self, pt: PointTuple) -> bool:
+    @point.accept_tuple
+    def on_edge(self, pt: point.Point) -> bool:
         return self.on_top_edge(pt) or self.on_bottom_edge(pt) or self.on_left_edge(pt) or self.on_right_edge(pt)
 
     @staticmethod
-    def on_top_edge(pt: PointTuple) -> bool:
-        return Point(*pt).y == 0
+    @point.accept_tuple
+    def on_top_edge(pt: point.Point) -> bool:
+        return pt.y == 0
 
-    def on_bottom_edge(self, pt: PointTuple) -> bool:
-        return Point(*pt).y == self.height - 1
+    @point.accept_tuple
+    def on_bottom_edge(self, pt: point.Point) -> bool:
+        return pt.y == self.height - 1
 
     @staticmethod
-    def on_left_edge(pt: PointTuple) -> bool:
-        return Point(*pt).x == 0
+    @point.accept_tuple
+    def on_left_edge(pt: point.Point) -> bool:
+        return pt.x == 0
 
-    def on_right_edge(self, pt: PointTuple) -> bool:
-        return Point(*pt).x == self.width - 1
+    @point.accept_tuple
+    def on_right_edge(self, pt: point.Point) -> bool:
+        return pt.x == self.width - 1
 
-    def neighbors(self, pt: PointTuple, *args, **kwargs) -> set[Point]:
-        return {n for n in Point(*pt).neighbors(*args, **kwargs) if self.valid_point(n)}
+    @point.accept_tuple
+    def neighbors(self, pt: point.Point, *args, **kwargs) -> set[point.Point]:
+        return {n for n in pt.neighbors(*args, **kwargs) if self.valid_point(n)}
 
-    def initial_position(self, value: str) -> Point:
-        pts: set[Point] = self.items[value]
+    def initial_position(self, value: str) -> point.Point:
+        pts: typing.Collection[point.Point] = self.items[value]
         assert len(pts) == 1
         return tuple(pts)[0]

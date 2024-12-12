@@ -7,9 +7,8 @@ PointTuple: typing.TypeAlias = tuple[int, ...]
 
 def accept_tuple(func: typing.Callable) -> typing.Callable:
     @functools.wraps(func)
-    def wrapper(*points_or_tuples):
-        points: list[Point] = [Point(*t) for t in points_or_tuples]
-        return func(*points)
+    def wrapper(point_or_tuple: PointTuple, *args, **kwargs):
+        return func(Point(*point_or_tuple), *args, **kwargs)
     return wrapper
 
 
