@@ -1,55 +1,101 @@
 import pathlib
 import sys
 import os
-from typing import Collection, Generator
+from typing import Generator, Iterable
 
 from point import Point
 from space import Space
 
+TURN_RIGHT: dict[str, str] = {'^': '>',
+                              '>': 'v',
+                              'v': '<',
+                              '<': '^'}
 
-class Garden(Space):
-    @staticmethod
-    def area(region: Collection[Point]) -> int:
-        return len(region)
+TURN_LEFT: dict[str, str] = {'^': '<',
+                             '>': '^',
+                             'v': '>',
+                             '<': 'v'}
 
-    @staticmethod
-    def perimeter(region: Collection[Point]) -> int:
-        perim: int = 0
-        for pt in region:
-            perim += 4 - len(pt.neighbors().intersection(region))
-        return perim
 
-    @staticmethod
-    def sides(region: Collection[Point]) -> int:
+def get_next(pos: Point, direction: str) -> Point:
+    match direction:
+        case '^':
+            return pos.up()
+        case '>':
+            return pos.right()
+        case 'v':
+            return pos.down()
+        case '<':
+            return pos.left()
+        case _:
+            raise ValueError('invalid direction')
+
+
+class Region:
+    def __init__(self, plots: Iterable[Point]) -> None:
+        self.plots: set[Point] = set(plots)
+
+    def price(self) -> int:
+        return self.perimeter() * self.area()
+
+    def bulk_price(self) -> int:
+        return self.sides() * self.area()
+
+    def area(self) -> int:
+        return len(self.plots)
+
+    def perimeter(self) -> int:
+        return sum(len(pt.neighbors().difference(self.plots)) for pt in self.plots)
+
+    def sides(self) -> int:
         sides: int = 0
+        perimeter_points: set[Point] = set()
+        for pt in self.plots:
+            if pt.down() in self.plots or pt.down() in perimeter_points:
+                continue
+
+            start_pos: Point = pt.down()
+            start_dir: str = '>'
+
+            # Left hand on wall
+            cur_pos: Point = start_pos
+            cur_dir: str = start_dir
+            cur_sides: int = 0
+            while cur_pos != start_pos or cur_dir != start_dir or cur_sides == 0:
+                perimeter_points.add(cur_pos)
+                if get_next(cur_pos, TURN_LEFT[cur_dir]) not in self.plots:
+                    cur_dir = TURN_LEFT[cur_dir]
+                    cur_sides += 1
+                    cur_pos = get_next(cur_pos, cur_dir)
+                elif get_next(cur_pos, cur_dir) in self.plots:
+                    cur_dir = TURN_RIGHT[cur_dir]
+                    cur_sides += 1
+                else:
+                    cur_pos = get_next(cur_pos, cur_dir)
+
+            sides += cur_sides
 
         return sides
 
-    def price(self, region: Collection[Point]) -> int:
-        return self.perimeter(region) * self.area(region)
 
-    def bulk_price(self, region: Collection[Point]) -> int:
-        return self.sides(region) * self.area(region)
-
-    def expand(self, start: Point) -> set[Point]:
+class Garden(Space):
+    def expand_to_region(self, start: Point) -> Region:
         plant: str = self[start]
-        pts: set[Point] = set()
+        seen: set[Point] = set()
         new_pts: set[Point] = {start}
         while new_pts:
-            pts |= new_pts
-            new_new_pts: set[Point] = set()
-            for pt in new_pts:
-                new_new_pts |= self.neighbors(pt) & self.items[plant]
-            new_pts = new_new_pts - pts
-        return pts
+            pt: Point = new_pts.pop()
+            seen.add(pt)
+            new_pts |= (self.neighbors(pt) & self.items[plant]) - seen
+        return Region(seen)
 
-    def regions(self) -> Generator[set[Point], None, None]:
+    def regions(self) -> Generator[Region, None, None]:
         for plots in self.items.values():
             plots = set(plots)
             while plots:
                 seed: Point = plots.pop()
-                region: set[Point] = self.expand(seed)
-                plots -= region
+                region: Region = self.expand_to_region(seed)
+                plots -= region.plots
                 yield region
 
 
@@ -61,13 +107,13 @@ def parse(puzzle_input: str):
 def part1(data):
     """Solve part 1"""
     garden: Garden = Garden(data)
-    return sum(garden.price(r) for r in garden.regions())
+    return sum(region.price() for region in garden.regions())
 
 
 def part2(data):
     """Solve part 2"""
     garden: Garden = Garden(data)
-    return sum(garden.bulk_price(r) for r in garden.regions())
+    return sum(region.bulk_price() for region in garden.regions())
 
 
 def solve(puzzle_input: str):
