@@ -31,7 +31,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 480
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
