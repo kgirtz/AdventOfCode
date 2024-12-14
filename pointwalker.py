@@ -91,7 +91,7 @@ class PointWalker:
 
     def copy(self) -> typing.Self:
         # Only copy position/heading, history data is ignored
-        return PointWalker(self.position, self.heading)
+        return self.__class__(self.position, self.heading)
 
     def state(self) -> State:
         return State(self.position, self.heading)
