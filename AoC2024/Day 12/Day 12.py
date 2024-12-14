@@ -34,9 +34,10 @@ class Region:
             # Left hand on wall
             start: PointWalker = PointWalker(pt.down(), 'EAST')
             walker: PointWalker = PointWalker(start)
-            walker.remember = True
+            walker.track_history = True
 
             cur_sides: int = 0
+            # while not walker.has_looped():  # TODO: bug
             while walker != start or cur_sides == 0:
                 if walker.peek('LEFT') not in self.plots:
                     walker.turn('LEFT')
@@ -47,7 +48,7 @@ class Region:
                     cur_sides += 1
                 else:
                     walker.step()
-            perimeter_points.update(walker.visited())
+            perimeter_points.update(walker.visited_points())
 
             sides += cur_sides
 
