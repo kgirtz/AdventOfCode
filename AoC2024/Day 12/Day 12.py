@@ -4,31 +4,8 @@ import os
 from typing import Generator, Iterable
 
 from point import Point
+from pointwalker import PointWalker
 from space import Space
-
-TURN_RIGHT: dict[str, str] = {'^': '>',
-                              '>': 'v',
-                              'v': '<',
-                              '<': '^'}
-
-TURN_LEFT: dict[str, str] = {'^': '<',
-                             '>': '^',
-                             'v': '>',
-                             '<': 'v'}
-
-
-def get_next(pos: Point, direction: str) -> Point:
-    match direction:
-        case '^':
-            return pos.up()
-        case '>':
-            return pos.right()
-        case 'v':
-            return pos.down()
-        case '<':
-            return pos.left()
-        case _:
-            raise ValueError('invalid direction')
 
 
 class Region:
@@ -54,24 +31,21 @@ class Region:
             if pt.down() in self.plots or pt.down() in perimeter_points:
                 continue
 
-            start_pos: Point = pt.down()
-            start_dir: str = '>'
-
             # Left hand on wall
-            cur_pos: Point = start_pos
-            cur_dir: str = start_dir
+            start: PointWalker = PointWalker(pt.down(), 'EAST')
+            walker: PointWalker = start.copy()
             cur_sides: int = 0
-            while cur_pos != start_pos or cur_dir != start_dir or cur_sides == 0:
-                perimeter_points.add(cur_pos)
-                if get_next(cur_pos, TURN_LEFT[cur_dir]) not in self.plots:
-                    cur_dir = TURN_LEFT[cur_dir]
+            while walker != start or cur_sides == 0:
+                perimeter_points.add(walker.position)
+                if walker.peek('LEFT') not in self.plots:
+                    walker.turn('LEFT')
+                    walker.move()
                     cur_sides += 1
-                    cur_pos = get_next(cur_pos, cur_dir)
-                elif get_next(cur_pos, cur_dir) in self.plots:
-                    cur_dir = TURN_RIGHT[cur_dir]
+                elif walker.next() in self.plots:
+                    walker.turn('RIGHT')
                     cur_sides += 1
                 else:
-                    cur_pos = get_next(cur_pos, cur_dir)
+                    walker.move()
 
             sides += cur_sides
 
