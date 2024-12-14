@@ -29,29 +29,29 @@ class Point(typing.NamedTuple):
     def __bool__(self) -> bool:
         return self != ORIGIN
 
-    def left(self) -> typing.Self:
-        return Point(self.x - 1, self.y)
+    def left(self, distance: int = 1) -> typing.Self:
+        return Point(self.x - distance, self.y)
 
-    def right(self) -> typing.Self:
-        return Point(self.x + 1, self.y)
+    def right(self, distance: int = 1) -> typing.Self:
+        return Point(self.x + distance, self.y)
 
-    def up(self) -> typing.Self:
-        return Point(self.x, self.y - 1)
+    def up(self, distance: int = 1) -> typing.Self:
+        return Point(self.x, self.y - distance)
 
-    def down(self) -> typing.Self:
-        return Point(self.x, self.y + 1)
+    def down(self, distance: int = 1) -> typing.Self:
+        return Point(self.x, self.y + distance)
 
-    def up_left(self) -> typing.Self:
-        return self.up().left()
+    def up_left(self, distance: int = 1) -> typing.Self:
+        return self.up(distance).left(distance)
 
-    def down_left(self) -> typing.Self:
-        return self.down().left()
+    def down_left(self, distance: int = 1) -> typing.Self:
+        return self.down(distance).left(distance)
 
-    def up_right(self) -> typing.Self:
-        return self.up().right()
+    def up_right(self, distance: int = 1) -> typing.Self:
+        return self.up(distance).right(distance)
 
-    def down_right(self) -> typing.Self:
-        return self.down().right()
+    def down_right(self, distance: int = 1) -> typing.Self:
+        return self.down(distance).right(distance)
 
     @accept_tuple_method
     def is_left_of(self, pt: typing.Self) -> bool:
