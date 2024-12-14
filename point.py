@@ -78,26 +78,15 @@ class Point(typing.NamedTuple):
         return pt in self.neighbors(include_corners=include_corners)
 
     def neighbors(self, *, include_corners: bool = False, corners_only: bool = False) -> set[typing.Self]:
+        diagonal: set[Point] = {self.up_right(), self.up_left(), self.down_right(), self.down_left()}
         if corners_only:
-            return {self.up_right(),
-                    self.up_left(),
-                    self.down_right(),
-                    self.down_left()}
+            return diagonal
 
+        orthogonal: set[Point] = {self.up(),  self.down(), self.left(), self.right()}
         if include_corners:
-            return {self.up(),
-                    self.down(),
-                    self.left(),
-                    self.right(),
-                    self.up_right(),
-                    self.up_left(),
-                    self.down_right(),
-                    self.down_left()}
+            return orthogonal | diagonal
 
-        return {self.up(),
-                self.down(),
-                self.left(),
-                self.right()}
+        return orthogonal
 
     @accept_tuple_method
     def distance(self, start: typing.Self) -> float:
