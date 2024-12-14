@@ -42,7 +42,7 @@ def part1(data):
 def part2(data):
     """Solve part 2"""
     conversion: int = 10000000000000
-    return sum(min_cost(a, b, Point(prize.x + conversion, prize.y + conversion)) for a, b, prize in data)
+    return sum(min_cost(a, b, prize + (conversion, conversion)) for a, b, prize in data)
 
 
 def solve(puzzle_input: str):
