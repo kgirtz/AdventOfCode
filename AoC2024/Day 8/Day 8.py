@@ -19,23 +19,23 @@ class AntennaMap(Space):
         # Toward b
         if harmonics:
             node: Point = a
-            while self.valid_point(node):
+            while self.in_space(node):
                 antinodes.add(node)
                 node = node + shift
         else:
             node = a + 2 * shift
-            if self.valid_point(node):
+            if self.in_space(node):
                 antinodes.add(node)
 
         # Away from b
         if harmonics:
             node = a
-            while self.valid_point(node):
+            while self.in_space(node):
                 antinodes.add(node)
                 node = node - shift
         else:
             node = a - shift
-            if self.valid_point(node):
+            if self.in_space(node):
                 antinodes.add(node)
 
         return antinodes

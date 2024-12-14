@@ -28,7 +28,7 @@ def count_words(word: str, start: Point, s: Space) -> int:
         pt: Point = start
         word_idx: int = 1
         next_pt: Point = getattr(pt, d)()
-        while s.valid_point(next_pt) and s[next_pt] == word[word_idx]:
+        while s.in_space(next_pt) and s[next_pt] == word[word_idx]:
             if word_idx == len(word) - 1:
                 total += 1
                 break

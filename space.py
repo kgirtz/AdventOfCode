@@ -33,7 +33,7 @@ class Space:
         return int(value) if self.integer_values else value
 
     @point.accept_tuple_method
-    def valid_point(self, pt: point.Point) -> bool:
+    def in_space(self, pt: point.Point) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
     def on_edge(self, pt: point.PointTuple) -> bool:
@@ -59,9 +59,10 @@ class Space:
 
     @point.accept_tuple_method
     def neighbors(self, pt: point.Point, *args, **kwargs) -> set[point.Point]:
-        return {n for n in pt.neighbors(*args, **kwargs) if self.valid_point(n)}
+        return {n for n in pt.neighbors(*args, **kwargs) if self.in_space(n)}
 
-    def initial_position(self, value: str) -> point.Point:
-        pts: typing.Collection[point.Point] = self.items[value]
-        assert len(pts) == 1
-        return tuple(pts)[0]
+    def initial_position(self, item: str) -> point.Point:
+        pts: tuple[point.Point, ...] = tuple(self.items[item])
+        if len(pts) != 1:
+            raise ValueError(f"more than one '{item}' found")
+        return pts[0]

@@ -23,7 +23,7 @@ class Lab(Space):
         visited: set[Point] = set()
         cur_dir: str = '^'
         cur_pos: Point = self.guard_starting_position
-        while self.valid_point(cur_pos):
+        while self.in_space(cur_pos):
             visited.add(cur_pos)
             next_pos: Point = self.get_next(cur_pos, cur_dir)
             while next_pos in self.obstacles:
@@ -36,7 +36,7 @@ class Lab(Space):
         visited: dict[Point, set[str]] = defaultdict(set)
         cur_dir: str = '^'
         cur_pos: Point = self.guard_starting_position
-        while self.valid_point(cur_pos):
+        while self.in_space(cur_pos):
             visited[cur_pos].add(cur_dir)
             next_pos: Point = self.get_next(cur_pos, cur_dir)
             while next_pos in self.obstacles:
