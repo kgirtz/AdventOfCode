@@ -33,7 +33,7 @@ class Region:
 
             # Left hand on wall
             start: PointWalker = PointWalker(pt.down(), 'EAST')
-            walker: PointWalker = start.copy()
+            walker: PointWalker = PointWalker(start)
             cur_sides: int = 0
             while walker != start or cur_sides == 0:
                 perimeter_points.add(walker.position)
