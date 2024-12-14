@@ -3,7 +3,7 @@ import sys
 import os
 import re
 
-from point import Point, ORIGIN
+from point import Point
 
 
 def parse(puzzle_input: str):
@@ -18,38 +18,31 @@ def parse(puzzle_input: str):
     return claw_machines
 
 
-def min_cost(a: Point, b: Point, prize: Point, start: Point = ORIGIN) -> int:
-    b_numerator: int = a.x * prize.y - a.y * prize.x
-    b_denominator: int = a.x * b.y - a.y * b.x
-    if b_numerator % b_denominator:
-        return -1
+def min_cost(a: Point, b: Point, prize: Point) -> int:
+    b_numer: int = a.x * prize.y - a.y * prize.x
+    b_denom: int = a.x * b.y - a.y * b.x
+    if b_numer % b_denom:
+        return 0
 
-    b_presses: int = b_numerator // b_denominator
-    if (prize.x - b.x * b_presses) % a.x:
-        return -1
+    b_presses: int = b_numer // b_denom
+    a_numer: int = prize.x - b.x * b_presses
+    a_denom: int = a.x
+    if a_numer % a_denom:
+        return 0
 
-    a_presses: int = (prize.x - b.x * b_presses) // a.x
+    a_presses: int = a_numer // a_denom
     return 3 * a_presses + b_presses
 
 
 def part1(data):
     """Solve part 1"""
-    total_cost: int = 0
-    for a, b, prize in data:
-        cost: int = min_cost(a, b, prize)
-        if cost != -1:
-            total_cost += cost
-    return total_cost
+    return sum(min_cost(a, b, prize) for a, b, prize in data)
 
 
 def part2(data):
     """Solve part 2"""
-    total_cost: int = 0
-    for a, b, prize in data:
-        cost: int = min_cost(a, b, Point(prize.x + 10000000000000, prize.y + 10000000000000))
-        if cost != -1:
-            total_cost += cost
-    return total_cost
+    conversion: int = 10000000000000
+    return sum(min_cost(a, b, Point(prize.x + conversion, prize.y + conversion)) for a, b, prize in data)
 
 
 def solve(puzzle_input: str):
