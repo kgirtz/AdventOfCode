@@ -14,17 +14,16 @@ class AntennaMap(Space):
         antinodes: set[Point] = set()
 
         # a to b
-        run: int = a.run(b)
-        rise: int = a.rise(b)
+        shift: Point = b - a
 
         # Toward b
         if harmonics:
             node: Point = a
             while self.valid_point(node):
                 antinodes.add(node)
-                node = Point(node.x + run, node.y + rise)
+                node = node + shift
         else:
-            node = Point(a.x + 2 * run, a.y + 2 * rise)
+            node = a + 2 * shift
             if self.valid_point(node):
                 antinodes.add(node)
 
@@ -33,9 +32,9 @@ class AntennaMap(Space):
             node = a
             while self.valid_point(node):
                 antinodes.add(node)
-                node = Point(node.x - run, node.y - rise)
+                node = node - shift
         else:
-            node = Point(a.x - run, a.y - rise)
+            node = a - shift
             if self.valid_point(node):
                 antinodes.add(node)
 
