@@ -66,6 +66,14 @@ class Point(typing.NamedTuple):
     def is_below(self, pt: typing.Self) -> bool:
         return self.y > pt.y
 
+    @accept_tuple_method
+    def same_column(self, pt: typing.Self) -> bool:
+        return self.x == pt.x
+
+    @accept_tuple_method
+    def same_row(self, pt: typing.Self) -> bool:
+        return self.y == pt.y
+
     def adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
         return pt in self.neighbors(include_corners=include_corners)
 
