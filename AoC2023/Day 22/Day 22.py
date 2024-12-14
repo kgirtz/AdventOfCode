@@ -3,12 +3,12 @@ import sys
 import os
 import heapq
 import functools
-from cube import Cube
+from xyztrio import XYZtrio
 from typing import Iterable
 
     
 class Brick:
-    def __init__(self, endpoint1: Cube, endpoint2: Cube) -> None:
+    def __init__(self, endpoint1: XYZtrio, endpoint2: XYZtrio) -> None:
         self.x_min: int = min(endpoint1.x, endpoint2.x)
         self.x_max: int = max(endpoint1.x, endpoint2.x)
         self.y_min: int = min(endpoint1.y, endpoint2.y)
@@ -54,8 +54,8 @@ def parse(puzzle_input):
     bricks: list[Brick] = []
     for line in puzzle_input.split('\n'):
         c1, c2 = line.split('~')
-        cube1: Cube = Cube(*(int(n) for n in c1.split(',')))
-        cube2: Cube = Cube(*(int(n) for n in c2.split(',')))
+        cube1: XYZtrio = XYZtrio(*(int(n) for n in c1.split(',')))
+        cube2: XYZtrio = XYZtrio(*(int(n) for n in c2.split(',')))
         bricks.append(Brick(cube1, cube2))
     return bricks
 

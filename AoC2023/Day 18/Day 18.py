@@ -2,7 +2,7 @@ import pathlib
 import sys
 import os
 import re
-from point import Point
+from xypair import XYpair
 from typing import Sequence
 from collections import defaultdict
 
@@ -15,38 +15,38 @@ def color_code_to_instruction(code: str) -> (str, int):
 
 class Lagoon:
     def __init__(self, instructions: Sequence[tuple[str, int]]) -> None:
-        self.segments: list[tuple[Point, Point]] = []
+        self.segments: list[tuple[XYpair, XYpair]] = []
 
         x, y = 0, 0
         for direction, distance in instructions:
             match direction:
                 case 'U':
-                    self.segments.append((Point(x, y), Point(x, y - distance)))
+                    self.segments.append((XYpair(x, y), XYpair(x, y - distance)))
                     y -= distance
                 case 'D':
-                    self.segments.append((Point(x, y), Point(x, y + distance)))
+                    self.segments.append((XYpair(x, y), XYpair(x, y + distance)))
                     y += distance
                 case 'L':
-                    self.segments.append((Point(x, y), Point(x - distance, y)))
+                    self.segments.append((XYpair(x, y), XYpair(x - distance, y)))
                     x -= distance
                 case 'R':
-                    self.segments.append((Point(x, y), Point(x + distance, y)))
+                    self.segments.append((XYpair(x, y), XYpair(x + distance, y)))
                     x += distance
 
-    def is_s_shape(self, segment: tuple[Point, Point]) -> bool:
+    def is_s_shape(self, segment: tuple[XYpair, XYpair]) -> bool:
         if segment not in self.segments:
             segment = segment[::-1]
         segment_pos: int = self.segments.index(segment)
 
-        prev_seg: tuple[Point, Point] = self.segments[segment_pos - 1]
-        next_seg: tuple[Point, Point] = self.segments[(segment_pos + 1) % len(self.segments)]
+        prev_seg: tuple[XYpair, XYpair] = self.segments[segment_pos - 1]
+        next_seg: tuple[XYpair, XYpair] = self.segments[(segment_pos + 1) % len(self.segments)]
 
         return (prev_seg[0].y < segment[0].y and next_seg[1].y > segment[1].y) or \
             (prev_seg[0].y > segment[0].y and next_seg[1].y < segment[1].y)
 
     def size(self) -> int:
         horizontal_segments: dict[int, list[tuple[int, int]]] = defaultdict(list)
-        vertical_segments: list[tuple[Point, Point]] = []
+        vertical_segments: list[tuple[XYpair, XYpair]] = []
 
         for start, end in self.segments:
             if start.x == end.x:
@@ -90,7 +90,7 @@ class Lagoon:
 
                 # Horizontal segment in row
                 else:
-                    if self.is_s_shape((Point(intersection[0], row), Point(intersection[1], row))):
+                    if self.is_s_shape((XYpair(intersection[0], row), XYpair(intersection[1], row))):
                         if side == 'out':
                             left_side = intersection[0]
                             side = 'in'

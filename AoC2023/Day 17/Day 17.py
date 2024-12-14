@@ -3,7 +3,7 @@ import sys
 import os
 import functools
 import heapq
-from point import Point
+from xypair import XYpair
 from collections import defaultdict
 
 
@@ -14,21 +14,21 @@ class HeatLossMap:
         self.heat_loss: list[list[int]] = heat_loss_map
         self.inf: int = sum(sum(row) for row in heat_loss_map)
 
-    def __contains__(self, pt: Point) -> bool:
+    def __contains__(self, pt: XYpair) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    def heat_loss_at(self, pt: Point) -> int:
+    def heat_loss_at(self, pt: XYpair) -> int:
         return self.heat_loss[pt.y][pt.x]
 
-    def neighbors(self, pt: Point) -> list[tuple[Point, str]]:
-        all_neighbors: list[tuple[Point, str]] = [(pt.up(), '^'),
-                                                  (pt.down(), 'v'),
-                                                  (pt.left(), '<'),
-                                                  (pt.right(), '>')]
+    def neighbors(self, pt: XYpair) -> list[tuple[XYpair, str]]:
+        all_neighbors: list[tuple[XYpair, str]] = [(pt.up(), '^'),
+                                                   (pt.down(), 'v'),
+                                                   (pt.left(), '<'),
+                                                   (pt.right(), '>')]
         return [n for n in all_neighbors if n[0] in self]
 
     @staticmethod
-    def go_straight(pt: Point, direction: str) -> Point:
+    def go_straight(pt: XYpair, direction: str) -> XYpair:
         match direction:
             case '^':
                 return pt.up()
@@ -40,7 +40,7 @@ class HeatLossMap:
                 return pt.right()
 
     @staticmethod
-    def turn_left(pt: Point, direction: str) -> (Point, str):
+    def turn_left(pt: XYpair, direction: str) -> (XYpair, str):
         match direction:
             case '^':
                 return pt.left(), '<'
@@ -52,7 +52,7 @@ class HeatLossMap:
                 return pt.up(), '^'
 
     @staticmethod
-    def turn_right(pt: Point, direction: str) -> (Point, str):
+    def turn_right(pt: XYpair, direction: str) -> (XYpair, str):
         match direction:
             case '^':
                 return pt.right(), '>'
@@ -64,7 +64,7 @@ class HeatLossMap:
                 return pt.down(), 'v'
 
     @functools.lru_cache(maxsize=None)
-    def minimal_heat_loss(self, start: Point, end: Point, visited: tuple[Point, ...], direction: str = '', can_go_straight: bool = True) -> int:
+    def minimal_heat_loss(self, start: XYpair, end: XYpair, visited: tuple[XYpair, ...], direction: str = '', can_go_straight: bool = True) -> int:
         if start == end:
             return 0
 
@@ -77,29 +77,29 @@ class HeatLossMap:
 
         # Go straight if on board and not 3 in a row yet
         if can_go_straight:
-            straight: Point = self.go_straight(start, direction)
+            straight: XYpair = self.go_straight(start, direction)
             if straight in self and straight not in visited:
                 min_loss = min(min_loss, self.heat_loss_at(straight) + self.minimal_heat_loss(straight, end, visited, direction, False))
 
         # Go left if on board
-        left: tuple[Point, str] = self.turn_left(start, direction)
+        left: tuple[XYpair, str] = self.turn_left(start, direction)
         if left[0] in self and left[0] not in visited:
             min_loss = min(min_loss, self.heat_loss_at(left[0]) + self.minimal_heat_loss(left[0], end, visited, left[1]))
 
         # Go right if on board
-        right: tuple[Point, str] = self.turn_right(start, direction)
+        right: tuple[XYpair, str] = self.turn_right(start, direction)
         if right[0] in self and right[0] not in visited:
             min_loss = min(min_loss, self.heat_loss_at(right[0]) + self.minimal_heat_loss(right[0], end, visited, right[1]))
 
         return min_loss
 
-    def dijkstra_heat_loss(self, start: Point, end: Point) -> int:
-        prev_pos: dict[Point, Point] = {}  # defaultdict(list)
-        min_heat_loss: dict[Point, int] = {Point(x, y): self.inf for y in range(self.height) for x in range(self.width)}
+    def dijkstra_heat_loss(self, start: XYpair, end: XYpair) -> int:
+        prev_pos: dict[XYpair, XYpair] = {}  # defaultdict(list)
+        min_heat_loss: dict[XYpair, int] = {XYpair(x, y): self.inf for y in range(self.height) for x in range(self.width)}
         min_heat_loss[start] = 0
 
-        visited: set[Point] = set()
-        to_check: list[tuple[int, Point]] = [(min_heat_loss[start], start)]
+        visited: set[XYpair] = set()
+        to_check: list[tuple[int, XYpair]] = [(min_heat_loss[start], start)]
         prev_pos[start] = start
         while end not in visited:
             _, cur_pt = heapq.heappop(to_check)
@@ -118,7 +118,7 @@ class HeatLossMap:
         return min_heat_loss[end]
 
 
-def four_in_a_row(pt1: Point, pt2: Point, pt3: Point, pt4: Point) -> bool:
+def four_in_a_row(pt1: XYpair, pt2: XYpair, pt3: XYpair, pt4: XYpair) -> bool:
     return (pt1 == pt2.up() and pt2 == pt3.up() and pt3 == pt4.up()) or \
            (pt1 == pt2.down() and pt2 == pt3.down() and pt3 == pt4.down()) or \
            (pt1 == pt2.left() and pt2 == pt3.left() and pt3 == pt4.left()) or \
@@ -132,8 +132,8 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    # return data.minimal_heat_loss(Point(0, 0), Point(data.width - 1, data.height - 1), tuple())
-    return data.dijkstra_heat_loss(Point(0, 0), Point(data.width - 1, data.height - 1))
+    # return data.minimal_heat_loss(XYpair(0, 0), XYpair(data.width - 1, data.height - 1), tuple())
+    return data.dijkstra_heat_loss(XYpair(0, 0), XYpair(data.width - 1, data.height - 1))
 
 
 def part2(data):

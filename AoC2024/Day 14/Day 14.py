@@ -3,20 +3,20 @@ import sys
 import os
 from typing import Iterable
 
-from point import Point, PointTuple
+from xypair import XYpair, XYtuple
 
 
 class Robot:
-    def __init__(self, pos: PointTuple, vel: PointTuple) -> None:
-        self.position: Point = Point(*pos)
-        self.velocity: Point = Point(*vel)
+    def __init__(self, pos: XYtuple, vel: XYtuple) -> None:
+        self.position: XYpair = XYpair(*pos)
+        self.velocity: XYpair = XYpair(*vel)
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.position})'
 
     def move(self, seconds: int, width: int, height: int) -> None:
         self.position = self.velocity * seconds + self.position
-        self.position = Point(self.position.x % width, self.position.y % height)
+        self.position = XYpair(self.position.x % width, self.position.y % height)
 
     def quadrant(self, width: int, height: int) -> int:
         middle_x: int = width // 2
@@ -39,7 +39,7 @@ def safety_factor(robots: Iterable[Robot], width: int, height: int) -> int:
 
 
 def print_robots(robots: Iterable[Robot], width: int, height: int) -> None:
-    robot_positions: set[Point] = {r.position for r in robots}
+    robot_positions: set[XYpair] = {r.position for r in robots}
     lines: list[str] = []
     for y in range(height):
         line: str = ''
@@ -53,7 +53,7 @@ def print_robots(robots: Iterable[Robot], width: int, height: int) -> None:
 
 
 def touching(robots: Iterable[Robot]) -> int:
-    robot_positions: set[Point] = {r.position for r in robots}
+    robot_positions: set[XYpair] = {r.position for r in robots}
     return sum(len(r.position.neighbors(include_corners=True) & robot_positions) for r in robots)
 
 
@@ -62,8 +62,8 @@ def parse(puzzle_input: str):
     robots: list[Robot] = []
     for line in puzzle_input.split('\n'):
         p_str, v_str = line.split()
-        p: PointTuple = tuple(int(n) for n in p_str.removeprefix('p=').split(','))
-        v: PointTuple = tuple(int(n) for n in v_str.removeprefix('v=').split(','))
+        p: XYtuple = tuple(int(n) for n in p_str.removeprefix('p=').split(','))
+        v: XYtuple = tuple(int(n) for n in v_str.removeprefix('v=').split(','))
         robots.append(Robot(p, v))
     return robots
 

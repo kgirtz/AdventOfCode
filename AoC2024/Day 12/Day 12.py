@@ -3,14 +3,14 @@ import sys
 import os
 from typing import Generator, Iterable
 
-from point import Point
+from xypair import XYpair
 from pointwalker import PointWalker
 from space import Space
 
 
 class Region:
-    def __init__(self, plots: Iterable[Point]) -> None:
-        self.plots: set[Point] = set(plots)
+    def __init__(self, plots: Iterable[XYpair]) -> None:
+        self.plots: set[XYpair] = set(plots)
 
     def price(self) -> int:
         return self.perimeter() * self.area()
@@ -26,7 +26,7 @@ class Region:
 
     def sides(self) -> int:
         sides: int = 0
-        perimeter_points: set[Point] = set()
+        perimeter_points: set[XYpair] = set()
         for pt in self.plots:
             if pt.down() in self.plots or pt.down() in perimeter_points:
                 continue
@@ -54,12 +54,12 @@ class Region:
 
 
 class Garden(Space):
-    def expand_to_region(self, start: Point) -> Region:
+    def expand_to_region(self, start: XYpair) -> Region:
         plant: str = self[start]
-        seen: set[Point] = set()
-        new_pts: set[Point] = {start}
+        seen: set[XYpair] = set()
+        new_pts: set[XYpair] = {start}
         while new_pts:
-            pt: Point = new_pts.pop()
+            pt: XYpair = new_pts.pop()
             seen.add(pt)
             new_pts |= (self.neighbors(pt) & self.items[plant]) - seen
         return Region(seen)
@@ -68,7 +68,7 @@ class Garden(Space):
         for plots in self.items.values():
             plots = set(plots)
             while plots:
-                seed: Point = plots.pop()
+                seed: XYpair = plots.pop()
                 region: Region = self.expand_to_region(seed)
                 plots -= region.plots
                 yield region

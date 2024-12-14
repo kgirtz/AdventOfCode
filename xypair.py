@@ -2,25 +2,25 @@ import typing
 import math
 import functools
 
-PointTuple: typing.TypeAlias = tuple[int, ...]
+XYtuple: typing.TypeAlias = tuple[int, ...]
 
 
 def accept_tuple(func: typing.Callable) -> typing.Callable:
     @functools.wraps(func)
-    def wrapper(point_or_tuple: PointTuple, *args, **kwargs):
-        return func(Point(*point_or_tuple), *args, **kwargs)
+    def wrapper(pair_or_tuple: XYtuple, *args, **kwargs):
+        return func(XYpair(*pair_or_tuple), *args, **kwargs)
     return wrapper
 
 
 def accept_tuple_method(func: typing.Callable) -> typing.Callable:
     @functools.wraps(func)
-    def wrapper(self, point_or_tuple: PointTuple, *args, **kwargs):
-        return func(self, Point(*point_or_tuple), *args, **kwargs)
+    def wrapper(self, pair_or_tuple: XYtuple, *args, **kwargs):
+        return func(self, XYpair(*pair_or_tuple), *args, **kwargs)
     return wrapper
 
 
 @typing.final
-class Point(typing.NamedTuple):
+class XYpair(typing.NamedTuple):
     x: int = 0
     y: int = 0
 
@@ -31,16 +31,16 @@ class Point(typing.NamedTuple):
         return self != ORIGIN
 
     def left(self, distance: int = 1) -> typing.Self:
-        return Point(self.x - distance, self.y)
+        return XYpair(self.x - distance, self.y)
 
     def right(self, distance: int = 1) -> typing.Self:
-        return Point(self.x + distance, self.y)
+        return XYpair(self.x + distance, self.y)
 
     def up(self, distance: int = 1) -> typing.Self:
-        return Point(self.x, self.y - distance)
+        return XYpair(self.x, self.y - distance)
 
     def down(self, distance: int = 1) -> typing.Self:
-        return Point(self.x, self.y + distance)
+        return XYpair(self.x, self.y + distance)
 
     def up_left(self, distance: int = 1) -> typing.Self:
         return self.up(distance).left(distance)
@@ -78,24 +78,24 @@ class Point(typing.NamedTuple):
     def same_row(self, pt: typing.Self) -> bool:
         return self.y == pt.y
 
-    def adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
+    def adjacent(self, pt: XYtuple, *, include_corners: bool = False) -> bool:
         return pt in self.neighbors(include_corners=include_corners)
 
-    def collinear(self, pts: typing.Iterable[PointTuple]) -> bool:
+    def collinear(self, pts: typing.Iterable[XYtuple]) -> bool:
         pts = list(pts)
-        basis: Point = self - Point(*pts[0])
+        basis: XYpair = self - XYpair(*pts[0])
         for pt in pts:
-            diff: Point = self - pt
+            diff: XYpair = self - pt
             if diff.x / basis.x != diff.y / basis.y:
                 return False
         return True
 
     def neighbors(self, *, include_corners: bool = False, corners_only: bool = False) -> set[typing.Self]:
-        diagonal: set[Point] = {self.up_right(), self.up_left(), self.down_right(), self.down_left()}
+        diagonal: set[XYpair] = {self.up_right(), self.up_left(), self.down_right(), self.down_left()}
         if corners_only:
             return diagonal
 
-        orthogonal: set[Point] = {self.up(),  self.down(), self.left(), self.right()}
+        orthogonal: set[XYpair] = {self.up(), self.down(), self.left(), self.right()}
         if include_corners:
             return orthogonal | diagonal
 
@@ -109,30 +109,30 @@ class Point(typing.NamedTuple):
     def manhattan_distance(self, start: typing.Self) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y)
 
-    def __add__(self, other: PointTuple) -> typing.Self:
+    def __add__(self, other: XYtuple) -> typing.Self:
         if isinstance(other, tuple):
-            other = Point(*other)
-            return Point(self.x + other.x, self.y + other.y)
+            other = XYpair(*other)
+            return XYpair(self.x + other.x, self.y + other.y)
         return NotImplemented
 
     def __radd__(self, other: typing.Any) -> typing.Self:
         return self + other
 
-    def __sub__(self, other: PointTuple) -> typing.Self:
+    def __sub__(self, other: XYtuple) -> typing.Self:
         if isinstance(other, tuple):
-            other = Point(*other)
-            return Point(self.x - other.x, self.y - other.y)
+            other = XYpair(*other)
+            return XYpair(self.x - other.x, self.y - other.y)
         return NotImplemented
 
-    def __rsub__(self, other: PointTuple) -> PointTuple:
+    def __rsub__(self, other: XYtuple) -> XYtuple:
         if isinstance(other, tuple):
-            other = Point(*other)
+            other = XYpair(*other)
             return other.x - self.x, other.y - self.y
         return NotImplemented
 
     def __mul__(self, other: int) -> typing.Self:
         if isinstance(other, int):
-            return Point(self.x * other, self.y * other)
+            return XYpair(self.x * other, self.y * other)
         return NotImplemented
 
     def __rmul__(self, other: typing.Any) -> typing.Self:
@@ -142,10 +142,10 @@ class Point(typing.NamedTuple):
         return self
 
     def __neg__(self) -> typing.Self:
-        return Point(-self.x, -self.y)
+        return XYpair(-self.x, -self.y)
 
     def __abs__(self) -> float:
         return self.distance(ORIGIN)
 
 
-ORIGIN: Point = Point(0, 0)
+ORIGIN: XYpair = XYpair(0, 0)

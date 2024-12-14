@@ -3,30 +3,30 @@ import sys
 import os
 
 from space import Space
-from point import Point
+from xypair import XYpair
 
 
 class TopoMap(Space):
-    def trailheads(self) -> set[Point]:
+    def trailheads(self) -> set[XYpair]:
         return self.items['0']
 
-    def score(self, trailhead: Point) -> int:
+    def score(self, trailhead: XYpair) -> int:
         assert self[trailhead] == 0
 
-        cur_lvl: set[Point] = {trailhead}
+        cur_lvl: set[XYpair] = {trailhead}
         for lvl in range(1, 10):
-            next_lvl: set[Point] = set()
+            next_lvl: set[XYpair] = set()
             for pt in cur_lvl:
                 next_lvl |= self.neighbors(pt) & self.items[str(lvl)]
             cur_lvl = next_lvl
         return len(cur_lvl)
 
-    def rating(self, trailhead: Point) -> int:
+    def rating(self, trailhead: XYpair) -> int:
         assert self[trailhead] == 0
 
-        cur_paths: set[tuple[Point, ...]] = {(trailhead,)}
+        cur_paths: set[tuple[XYpair, ...]] = {(trailhead,)}
         for lvl in range(1, 10):
-            next_paths: set[tuple[Point, ...]] = set()
+            next_paths: set[tuple[XYpair, ...]] = set()
             for path in cur_paths:
                 next_paths |= {path + (n,) for n in self.neighbors(path[-1]) & self.items[str(lvl)]}
             cur_paths = next_paths

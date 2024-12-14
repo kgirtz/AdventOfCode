@@ -2,26 +2,26 @@ import pathlib
 import sys
 import os
 import functools
-from point import Point
+from xypair import XYpair
 from typing import Sequence, Iterable
 from collections import defaultdict
 
 
 class TrailMap:
     def __init__(self, trail_map: Sequence[str]) -> None:
-        self.paths: dict[Point, str] = {}
+        self.paths: dict[XYpair, str] = {}
         for y, line in enumerate(trail_map):
             for x, ch in enumerate(line):
                 if ch != '#':
-                    self.paths[Point(x, y)] = ch
+                    self.paths[XYpair(x, y)] = ch
 
-        self.weighted_edges: dict[Point, dict[Point, int]] = self.make_graph()
+        self.weighted_edges: dict[XYpair, dict[XYpair, int]] = self.make_graph()
 
     def melt_ice(self) -> None:
         self.paths = {path: '.' for path in self.paths}
         self.weighted_edges = self.make_graph()
 
-    def walkable(self, cur_pos: Point, target: Point) -> bool:
+    def walkable(self, cur_pos: XYpair, target: XYpair) -> bool:
         if target == cur_pos.up():
             return self.paths[target] != 'v'
         if target == cur_pos.down():
@@ -31,28 +31,28 @@ class TrailMap:
         if target == cur_pos.right():
             return self.paths[target] != '<'
 
-    def make_graph(self) -> dict[Point, dict[Point, int]]:
-        outgoing: dict[Point, set[Point]] = defaultdict(set)
-        incoming: dict[Point, set[Point]] = defaultdict(set)
+    def make_graph(self) -> dict[XYpair, dict[XYpair, int]]:
+        outgoing: dict[XYpair, set[XYpair]] = defaultdict(set)
+        incoming: dict[XYpair, set[XYpair]] = defaultdict(set)
         for path, path_type in self.paths.items():
             match path_type:
                 case '^':
-                    above: Point = path.up()
+                    above: XYpair = path.up()
                     if self.paths.get(above, '#') not in ('v', '#'):
                         outgoing[path].add(above)
                         incoming[above].add(path)
                 case 'v':
-                    below: Point = path.down()
+                    below: XYpair = path.down()
                     if self.paths.get(below, '#') not in ('^', '#'):
                         outgoing[path].add(below)
                         incoming[below].add(path)
                 case '<':
-                    left: Point = path.left()
+                    left: XYpair = path.left()
                     if self.paths.get(left, '#') not in ('>', '#'):
                         outgoing[path].add(left)
                         incoming[left].add(path)
                 case '>':
-                    right: Point = path.right()
+                    right: XYpair = path.right()
                     if self.paths.get(right, '#') not in ('<', '#'):
                         outgoing[path].add(right)
                         incoming[right].add(path)
@@ -62,19 +62,19 @@ class TrailMap:
                             outgoing[path].add(n)
                             incoming[n].add(path)
 
-        sorted_paths: list[Point] = sorted(self.paths.keys(), key=lambda pt: pt.y)
-        start: Point = sorted_paths[0]
-        end: Point = sorted_paths[-1]
+        sorted_paths: list[XYpair] = sorted(self.paths.keys(), key=lambda pt: pt.y)
+        start: XYpair = sorted_paths[0]
+        end: XYpair = sorted_paths[-1]
 
-        graph: dict[Point, dict[Point, int]] = {start: {}, end: {}}
+        graph: dict[XYpair, dict[XYpair, int]] = {start: {}, end: {}}
         graph.update({p: {} for p in self.paths if len(outgoing[p]) >= 3})
         graph.update({p: {} for p in self.paths if len(outgoing[p]) == 2 and incoming[p] - outgoing[p]})
 
         for node, edges in graph.items():
             for next_step in outgoing[node]:
-                cur_pos: Point = node
+                cur_pos: XYpair = node
                 num_steps: int = 1
-                next_steps: set[Point] = outgoing[next_step] - {cur_pos}
+                next_steps: set[XYpair] = outgoing[next_step] - {cur_pos}
                 while len(next_steps) == 1:
                     num_steps += 1
                     cur_pos = next_step
@@ -90,7 +90,7 @@ class TrailMap:
         return graph
 
     @functools.lru_cache(maxsize=None)
-    def longest_path(self, start: Point, end: Point, remaining: Iterable[Point]) -> int:
+    def longest_path(self, start: XYpair, end: XYpair, remaining: Iterable[XYpair]) -> int:
         if start == end:
             return 0
         remaining = self.reachable(start, remaining)
@@ -106,11 +106,11 @@ class TrailMap:
 
         return longest
 
-    def reachable(self, start: Point, nodes: Iterable[Point]) -> set[Point]:
-        visited: set[Point] = set()
-        to_visit: set[Point] = {start}
+    def reachable(self, start: XYpair, nodes: Iterable[XYpair]) -> set[XYpair]:
+        visited: set[XYpair] = set()
+        to_visit: set[XYpair] = {start}
         while to_visit:
-            cur_node: Point = to_visit.pop()
+            cur_node: XYpair = to_visit.pop()
             visited.add(cur_node)
             to_visit |= (self.weighted_edges[cur_node].keys() & nodes) - visited
 
@@ -125,7 +125,7 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    sorted_paths: list[Point] = sorted(data.paths.keys(), key=lambda pt: pt.y)
+    sorted_paths: list[XYpair] = sorted(data.paths.keys(), key=lambda pt: pt.y)
     return data.longest_path(sorted_paths[0], sorted_paths[-1], tuple(data.weighted_edges.keys()))
 
 

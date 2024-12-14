@@ -1,25 +1,25 @@
 import pathlib
 import sys
 import os
-from point import Point
+from xypair import XYpair
 from typing import Iterable, Sequence
 
 
-def expand_galaxies(galaxies: Iterable[Point], expansion_rate: int) -> list[Point]:
+def expand_galaxies(galaxies: Iterable[XYpair], expansion_rate: int) -> list[XYpair]:
     galaxy_rows: set[int] = {galaxy.y for galaxy in galaxies}
     galaxy_columns: set[int] = {galaxy.x for galaxy in galaxies}
     expansion_rows: set[int] = {r for r in range(max(galaxy_rows)) if r not in galaxy_rows}
     expansion_columns: set[int] = {c for c in range(max(galaxy_columns)) if c not in galaxy_columns}
 
-    expanded: list[Point] = []
+    expanded: list[XYpair] = []
     for galaxy in galaxies:
         x: int = galaxy.x + (expansion_rate - 1) * len([c for c in expansion_columns if c < galaxy.x])
         y: int = galaxy.y + (expansion_rate - 1) * len([r for r in expansion_rows if r < galaxy.y])
-        expanded.append(Point(x, y))
+        expanded.append(XYpair(x, y))
     return expanded
 
 
-def sum_of_shortest_paths(galaxies: Sequence[Point]) -> int:
+def sum_of_shortest_paths(galaxies: Sequence[XYpair]) -> int:
     path_sum: int = 0
     for i, source in enumerate(galaxies[:-1]):
         for j, destination in enumerate(galaxies[i + 1:]):
@@ -29,11 +29,11 @@ def sum_of_shortest_paths(galaxies: Sequence[Point]) -> int:
 
 def parse(puzzle_input):
     """Parse input"""
-    galaxies: list[Point] = []
+    galaxies: list[XYpair] = []
     for y, line in enumerate(puzzle_input.split('\n')):
         for x, pixel in enumerate(line):
             if pixel == '#':
-                galaxies.append(Point(x, y))
+                galaxies.append(XYpair(x, y))
     return galaxies
 
 

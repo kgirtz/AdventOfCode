@@ -1,20 +1,20 @@
 import pathlib
 import sys
 import os
-from cube import Cube
+from xyztrio import XYZtrio
 from typing import Optional, Sequence
 
 
 class Hailstone:
-    def __init__(self, position: Cube, velocity: Cube) -> None:
-        self.initial_position: Cube = position
-        self.velocity: Cube = velocity
+    def __init__(self, position: XYZtrio, velocity: XYZtrio) -> None:
+        self.initial_position: XYZtrio = position
+        self.velocity: XYZtrio = velocity
 
-    def position(self, *, t: int) -> Cube:
+    def position(self, *, t: int) -> XYZtrio:
         x: int = self.velocity.x * t + self.initial_position.x
         y: int = self.velocity.y * t + self.initial_position.y
         z: int = self.velocity.z * t + self.initial_position.z
-        return Cube(x, y, z)
+        return XYZtrio(x, y, z)
 
     def time(self, x: int) -> int:
         return (x - self.initial_position.x) // self.velocity.x
@@ -52,7 +52,7 @@ class Hailstone:
         intersection_point: Optional[tuple[float, float, float]] = self.path_intersection(other)
         if intersection_point is None:
             return False
-        rounded: Cube = Cube(*(round(c) for c in intersection_point))
+        rounded: XYZtrio = XYZtrio(*(round(c) for c in intersection_point))
         if rounded != intersection_point:
             return False
         return self.time(rounded.x) == other.time(rounded.x)
@@ -63,8 +63,8 @@ def parse(puzzle_input):
     hailstones: list[Hailstone] = []
     for line in puzzle_input.split('\n'):
         position_str, velocity_str = line.split(' @ ')
-        position: Cube = Cube(*(int(component) for component in position_str.split(',')))
-        velocity: Cube = Cube(*(int(component) for component in velocity_str.split(',')))
+        position: XYZtrio = XYZtrio(*(int(component) for component in position_str.split(',')))
+        velocity: XYZtrio = XYZtrio(*(int(component) for component in velocity_str.split(',')))
         hailstones.append(Hailstone(position, velocity))
     return hailstones
 
@@ -98,9 +98,9 @@ def intersect_all(hailstones: Sequence[Hailstone]) -> Hailstone:
 
     # Determine correct line then time
     for t0 in range(1, 1000):
-        initial_positions: tuple[Cube, Cube] = (close[0].position(t=t0), close[1].position(t=t0))
+        initial_positions: tuple[XYZtrio, XYZtrio] = (close[0].position(t=t0), close[1].position(t=t0))
         for dt in range(1000000, 1001000):
-            final_positions: tuple[Cube, Cube] = (close[1].position(t=t0 + dt), close[0].position(t=t0 + dt))
+            final_positions: tuple[XYZtrio, XYZtrio] = (close[1].position(t=t0 + dt), close[0].position(t=t0 + dt))
 
             for initial_position, final_position in zip(initial_positions, final_positions):
                 if (final_position.x - initial_position.x) % dt != 0 or \
@@ -111,12 +111,12 @@ def intersect_all(hailstones: Sequence[Hailstone]) -> Hailstone:
                 vel_x: int = (final_position.x - initial_position.x) // dt
                 vel_y: int = (final_position.y - initial_position.y) // dt
                 vel_z: int = (final_position.z - initial_position.z) // dt
-                intersector: Hailstone = Hailstone(initial_position, Cube(vel_x, vel_y, vel_z))
+                intersector: Hailstone = Hailstone(initial_position, XYZtrio(vel_x, vel_y, vel_z))
 
                 if hits_all_stones(intersector, hailstones):
                     return intersector
 
-    return Hailstone(Cube(0, 0, 0), Cube(1, 1, 1))
+    return Hailstone(XYZtrio(0, 0, 0), XYZtrio(1, 1, 1))
 
 
 def part1(data):

@@ -2,7 +2,7 @@ import pathlib
 import sys
 import os
 from typing import Sequence
-from point import Point
+from xypair import XYpair
 from collections import defaultdict
 
 
@@ -22,17 +22,17 @@ class Contraption:
     def __init__(self, floor: Sequence[str]) -> None:
         self.height: int = len(floor)
         self.width: int = len(floor[0])
-        self.obstacles: dict[Point, str] = {}
+        self.obstacles: dict[XYpair, str] = {}
 
         for y, line in enumerate(floor):
             for x, square in enumerate(line):
                 if square != '.':
-                    self.obstacles[Point(x, y)] = square
+                    self.obstacles[XYpair(x, y)] = square
 
-    def valid_point(self, pt: Point) -> bool:
+    def valid_point(self, pt: XYpair) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    def passes_through(self, pt: Point, direction: str) -> bool:
+    def passes_through(self, pt: XYpair, direction: str) -> bool:
         match self.obstacles.get(pt, '.'):
             case '.':
                 return True
@@ -43,16 +43,16 @@ class Contraption:
             case _:
                 return False
 
-    def propagate_beam(self, cur_pos: Point, direction: str) -> (Point, list[str]):
+    def propagate_beam(self, cur_pos: XYpair, direction: str) -> (XYpair, list[str]):
         match direction:
             case '^':
-                next_pos: Point = cur_pos.up()
+                next_pos: XYpair = cur_pos.up()
             case 'v':
-                next_pos: Point = cur_pos.down()
+                next_pos: XYpair = cur_pos.down()
             case '<':
-                next_pos: Point = cur_pos.left()
+                next_pos: XYpair = cur_pos.left()
             case '>':
-                next_pos: Point = cur_pos.right()
+                next_pos: XYpair = cur_pos.right()
             case _:
                 print('INVALID DIRECTION')
                 raise
@@ -71,11 +71,11 @@ class Contraption:
             case '/' | '\\':
                 return next_pos, [self.DEFLECT[obstacle][direction]]
 
-    def energize(self, start_pos: Point, start_dir: str) -> list[Point]:
-        beams: list[tuple[Point, str]] = [(start_pos, start_dir)]
-        energized: dict[Point, set[str]] = defaultdict(set)
+    def energize(self, start_pos: XYpair, start_dir: str) -> list[XYpair]:
+        beams: list[tuple[XYpair, str]] = [(start_pos, start_dir)]
+        energized: dict[XYpair, set[str]] = defaultdict(set)
         while beams:
-            new_beams: list[tuple[Point, str]] = []
+            new_beams: list[tuple[XYpair, str]] = []
             for pos, direction in beams:
                 if pos in energized and direction in energized[pos]:
                     continue
@@ -99,16 +99,16 @@ def parse(puzzle_input):
 
 def part1(data):
     """Solve part 1"""
-    return len(data.energize(Point(-1, 0), '>'))
+    return len(data.energize(XYpair(-1, 0), '>'))
 
 
 def part2(data):
     """Solve part 2"""
     max_energy: int = 0
     for x in range(data.width):
-        max_energy = max(max_energy, len(data.energize(Point(x, -1), 'v')), len(data.energize(Point(x, data.height), '^')))
+        max_energy = max(max_energy, len(data.energize(XYpair(x, -1), 'v')), len(data.energize(XYpair(x, data.height), '^')))
     for y in range(data.height):
-        max_energy = max(max_energy, len(data.energize(Point(-1, y), '>')), len(data.energize(Point(data.width, y), '<')))
+        max_energy = max(max_energy, len(data.energize(XYpair(-1, y), '>')), len(data.energize(XYpair(data.width, y), '<')))
     return max_energy
 
 

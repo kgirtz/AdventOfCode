@@ -2,77 +2,77 @@ import pathlib
 import sys
 import os
 from typing import Sequence
-from point import Point
+from xypair import XYpair
 
 
 class Platform:
     def __init__(self, platform: Sequence[str]) -> None:
         self.height: int = len(platform)
         self.width: int = len(platform[0])
-        self.round_rocks: list[Point] = []
-        self.cube_rocks: list[Point] = []
+        self.round_rocks: list[XYpair] = []
+        self.cube_rocks: list[XYpair] = []
 
         for y, line in enumerate(platform):
             for x, pt in enumerate(line):
                 match pt:
                     case 'O':
-                        self.round_rocks.append(Point(x, y))
+                        self.round_rocks.append(XYpair(x, y))
                     case '#':
-                        self.cube_rocks.append(Point(x, y))
+                        self.cube_rocks.append(XYpair(x, y))
 
     def tilt_north(self) -> None:
-        rocks_to_move: list[Point] = sorted(self.round_rocks, key=lambda pt: pt.y)
-        resting_rocks: set[Point] = set(self.cube_rocks)
+        rocks_to_move: list[XYpair] = sorted(self.round_rocks, key=lambda pt: pt.y)
+        resting_rocks: set[XYpair] = set(self.cube_rocks)
         self.round_rocks = []
         for rock in rocks_to_move:
             y: int = rock.y
-            while y > 0 and Point(rock.x, y - 1) not in resting_rocks:
+            while y > 0 and XYpair(rock.x, y - 1) not in resting_rocks:
                 y -= 1
-            self.round_rocks.append(Point(rock.x, y))
-            resting_rocks.add(Point(rock.x, y))
+            self.round_rocks.append(XYpair(rock.x, y))
+            resting_rocks.add(XYpair(rock.x, y))
 
     def tilt_south(self) -> None:
-        rocks_to_move: list[Point] = sorted(self.round_rocks, key=lambda pt: pt.y, reverse=True)
-        resting_rocks: set[Point] = set(self.cube_rocks)
+        rocks_to_move: list[XYpair] = sorted(self.round_rocks, key=lambda pt: pt.y, reverse=True)
+        resting_rocks: set[XYpair] = set(self.cube_rocks)
         self.round_rocks = []
         for rock in rocks_to_move:
             y: int = rock.y
-            while y < self.height - 1 and Point(rock.x, y + 1) not in resting_rocks:
+            while y < self.height - 1 and XYpair(rock.x, y + 1) not in resting_rocks:
                 y += 1
-            self.round_rocks.append(Point(rock.x, y))
-            resting_rocks.add(Point(rock.x, y))
+            self.round_rocks.append(XYpair(rock.x, y))
+            resting_rocks.add(XYpair(rock.x, y))
 
     def tilt_west(self) -> None:
-        rocks_to_move: list[Point] = sorted(self.round_rocks)
-        resting_rocks: set[Point] = set(self.cube_rocks)
+        rocks_to_move: list[XYpair] = sorted(self.round_rocks)
+        resting_rocks: set[XYpair] = set(self.cube_rocks)
         self.round_rocks = []
         for rock in rocks_to_move:
             x: int = rock.x
-            while x > 0 and Point(x - 1, rock.y) not in resting_rocks:
+            while x > 0 and XYpair(x - 1, rock.y) not in resting_rocks:
                 x -= 1
-            self.round_rocks.append(Point(x, rock.y))
-            resting_rocks.add(Point(x, rock.y))
+            self.round_rocks.append(XYpair(x, rock.y))
+            resting_rocks.add(XYpair(x, rock.y))
 
     def tilt_east(self) -> None:
-        rocks_to_move: list[Point] = sorted(self.round_rocks, reverse=True)
-        resting_rocks: set[Point] = set(self.cube_rocks)
+        rocks_to_move: list[XYpair] = sorted(self.round_rocks, reverse=True)
+        resting_rocks: set[XYpair] = set(self.cube_rocks)
         self.round_rocks = []
         for rock in rocks_to_move:
             x: int = rock.x
-            while x < self.width - 1 and Point(x + 1, rock.y) not in resting_rocks:
+            while x < self.width - 1 and XYpair(x + 1, rock.y) not in resting_rocks:
                 x += 1
-            self.round_rocks.append(Point(x, rock.y))
-            resting_rocks.add(Point(x, rock.y))
+            self.round_rocks.append(XYpair(x, rock.y))
+            resting_rocks.add(XYpair(x, rock.y))
 
     def find_repeat_state(self) -> (int, int):
-        start_state: list[Point] = list(self.round_rocks)
-        seen_states: dict[tuple[Point, ...], int] = {tuple(self.round_rocks): 0}
+        start_state: list[XYpair] = list(self.round_rocks)
+        seen_states: dict[tuple[XYpair, ...], int] = {tuple(self.round_rocks): 0}
         i: int = 0
         while True:
             i += 1
             self.cycle()
 
-            state: tuple[Point, ...] = tuple(self.round_rocks)
+            state: tuple[XYpair, ...] = tuple(self.round_rocks)
             if state in seen_states:
                 break
 

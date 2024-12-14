@@ -2,7 +2,7 @@ import pathlib
 import sys
 import os
 from typing import Sequence
-from point import Point
+from xypair import XYpair
 from collections import defaultdict
 
 
@@ -10,29 +10,29 @@ class Garden:
     def __init__(self, garden_map: Sequence[str]) -> None:
         self.height: int = len(garden_map)
         self.width: int = len(garden_map[0])
-        self.rocks: set[Point] = set()
-        self.start: Point = Point()
+        self.rocks: set[XYpair] = set()
+        self.start: XYpair = XYpair()
 
         for y, line in enumerate(garden_map):
             for x, plot in enumerate(line):
                 if plot == 'S':
-                    self.start = Point(x, y)
+                    self.start = XYpair(x, y)
                 elif plot == '#':
-                    self.rocks.add(Point(x, y))
+                    self.rocks.add(XYpair(x, y))
 
-    def valid_point(self, pt: Point) -> bool:
+    def valid_point(self, pt: XYpair) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
     def possible_destinations(self, num_steps: int) -> int:
-        cur_points: dict[Point, int] = {self.start: 1}
+        cur_points: dict[XYpair, int] = {self.start: 1}
         for _ in range(num_steps):
-            new_points: dict[Point, int] = defaultdict(int)
+            new_points: dict[XYpair, int] = defaultdict(int)
             for pt, num in cur_points.items():
                 for neighbor in pt.neighbors():
                     if self.valid_point(neighbor):
                         new_points[neighbor] = num
                     else:
-                        neighbor = Point(neighbor.x % self.width, neighbor.y % self.height)
+                        neighbor = XYpair(neighbor.x % self.width, neighbor.y % self.height)
                         new_points[neighbor] += 1
             cur_points = {pt: num for pt, num in new_points.items() if pt not in self.rocks}
             print(cur_points)

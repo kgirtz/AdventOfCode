@@ -3,22 +3,22 @@ import sys
 import os
 import re
 
-from point import Point
+from xypair import XYpair
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    claw_machines: list[tuple[Point, Point, Point]] = []
+    claw_machines: list[tuple[XYpair, XYpair, XYpair]] = []
     for m in puzzle_input.split('\n\n'):
         numbers: list[int] = [int(n) for n in re.findall(r'\d+', m)]
-        a: Point = Point(*numbers[0:2])
-        b: Point = Point(*numbers[2:4])
-        prize: Point = Point(*numbers[4:6])
+        a: XYpair = XYpair(*numbers[0:2])
+        b: XYpair = XYpair(*numbers[2:4])
+        prize: XYpair = XYpair(*numbers[4:6])
         claw_machines.append((a, b, prize))
     return claw_machines
 
 
-def min_cost(a: Point, b: Point, prize: Point) -> int:
+def min_cost(a: XYpair, b: XYpair, prize: XYpair) -> int:
     b_numer: int = a.x * prize.y - a.y * prize.x
     b_denom: int = a.x * b.y - a.y * b.x
     if b_numer % b_denom:

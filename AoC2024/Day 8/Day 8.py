@@ -3,22 +3,22 @@ import sys
 import os
 
 from space import Space
-from point import Point
+from xypair import XYpair
 
 
 class AntennaMap(Space):
-    def calculate_antinodes(self, a: Point, b: Point, harmonics: bool = False) -> set[Point]:
+    def calculate_antinodes(self, a: XYpair, b: XYpair, harmonics: bool = False) -> set[XYpair]:
         if a == b:
             return set()
 
-        antinodes: set[Point] = set()
+        antinodes: set[XYpair] = set()
 
         # a to b
-        shift: Point = b - a
+        shift: XYpair = b - a
 
         # Toward b
         if harmonics:
-            node: Point = a
+            node: XYpair = a
             while self.in_space(node):
                 antinodes.add(node)
                 node = node + shift
@@ -40,8 +40,8 @@ class AntennaMap(Space):
 
         return antinodes
 
-    def find_all_antinodes(self, *, harmonics: bool = False) -> set[Point]:
-        antinodes: set[Point] = set()
+    def find_all_antinodes(self, *, harmonics: bool = False) -> set[XYpair]:
+        antinodes: set[XYpair] = set()
         for antennas in self.items.values():
             for a in antennas:
                 for b in antennas:

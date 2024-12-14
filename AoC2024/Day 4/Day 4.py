@@ -3,7 +3,7 @@ import sys
 import os
 
 from space import Space
-from point import Point
+from xypair import XYpair
 
 
 def parse(puzzle_input: str):
@@ -11,7 +11,7 @@ def parse(puzzle_input: str):
     return Space(puzzle_input.split('\n'), 'XMAS')
 
 
-def count_words(word: str, start: Point, s: Space) -> int:
+def count_words(word: str, start: XYpair, s: Space) -> int:
     assert len(word) > 1 and word[0] == s[start]
 
     directions: tuple[str, ...] = ('right',
@@ -25,9 +25,9 @@ def count_words(word: str, start: Point, s: Space) -> int:
 
     total: int = 0
     for d in directions:
-        pt: Point = start
+        pt: XYpair = start
         word_idx: int = 1
-        next_pt: Point = getattr(pt, d)()
+        next_pt: XYpair = getattr(pt, d)()
         while s.in_space(next_pt) and s[next_pt] == word[word_idx]:
             if word_idx == len(word) - 1:
                 total += 1
@@ -38,7 +38,7 @@ def count_words(word: str, start: Point, s: Space) -> int:
     return total
 
 
-def is_x(word: str, center: Point, s: Space) -> bool:
+def is_x(word: str, center: XYpair, s: Space) -> bool:
     assert word[1] == s[center] and len(word) == 3
     if s.on_edge(center):
         return False

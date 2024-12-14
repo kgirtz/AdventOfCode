@@ -1,22 +1,22 @@
 import pathlib
 import sys
 import os
-from point import Point
+from xypair import XYpair
 
 
 class Surface:
     def __init__(self, surface_str: list[str]) -> None:
-        self.start: Point = Point()
+        self.start: XYpair = XYpair()
         self.height: int = len(surface_str)
         self.width: int = len(surface_str[0])
         self.tiles: list[str] = surface_str
-        self.loop: set[Point] = set()
+        self.loop: set[XYpair] = set()
 
         # Find starting pipe
         for y, line in enumerate(surface_str):
             for x, tile in enumerate(line):
                 if tile == 'S':
-                    self.start = Point(x, y)
+                    self.start = XYpair(x, y)
                     break
 
         # Determine starting pipe type
@@ -41,23 +41,23 @@ class Surface:
             cur_pipe = [pipe for pipe in self.connections(cur_pipe) if pipe not in self.loop][0]
         self.loop.add(end_pipe)
 
-    def tile_at(self, pt: Point) -> str:
+    def tile_at(self, pt: XYpair) -> str:
         return self.tiles[pt.y][pt.x]
 
-    def valid_point(self, pt: Point) -> bool:
+    def valid_point(self, pt: XYpair) -> bool:
         return 0 <= pt.x < self.width and 0 <= pt.y < self.height
 
-    def on_edge(self, pt: Point) -> bool:
+    def on_edge(self, pt: XYpair) -> bool:
         return pt.x in (0, self.width - 1) or pt.y in (0, self.height - 1)
 
-    def neighbors(self, pt: Point) -> set[Point]:
+    def neighbors(self, pt: XYpair) -> set[XYpair]:
         return {n for n in pt.neighbors() if self.valid_point(n)}
 
-    def connections(self, pt: Point) -> list[Point]:
+    def connections(self, pt: XYpair) -> list[XYpair]:
         if not self.valid_point(pt):
             return []
 
-        connected_pipes: list[Point] = []
+        connected_pipes: list[XYpair] = []
 
         tile: str = self.tile_at(pt)
         if tile in ('|', 'J', 'L'):
@@ -72,13 +72,13 @@ class Surface:
         return [pipe for pipe in connected_pipes if self.valid_point(pipe)]
 
     def max_loop_distance(self) -> int:
-        loop: set[Point] = {self.start}
+        loop: set[XYpair] = {self.start}
         left, right = self.connections(self.start)
         distance: int = 1
 
         while left != right and left not in self.connections(right):
-            next_left: Point = [pipe for pipe in self.connections(left) if pipe not in loop][0]
-            next_right: Point = [pipe for pipe in self.connections(right) if pipe not in loop][0]
+            next_left: XYpair = [pipe for pipe in self.connections(left) if pipe not in loop][0]
+            next_right: XYpair = [pipe for pipe in self.connections(right) if pipe not in loop][0]
 
             loop |= {left, right}
             left = next_left
@@ -87,7 +87,7 @@ class Surface:
 
         return distance
 
-    def inside(self, prev: Point, cur: Point) -> set[Point]:
+    def inside(self, prev: XYpair, cur: XYpair) -> set[XYpair]:
         if not (self.valid_point(prev) and self.valid_point(cur)):
             return set()
 
@@ -129,42 +129,42 @@ class Surface:
 
         return set()
 
-    def explore_area(self, tile: Point) -> set[Point]:
+    def explore_area(self, tile: XYpair) -> set[XYpair]:
         if tile in self.loop:
             return set()
 
-        area: set[Point] = set()
-        to_explore: set[Point] = {tile}
+        area: set[XYpair] = set()
+        to_explore: set[XYpair] = {tile}
         while to_explore:
-            cur_tile: Point = to_explore.pop()
+            cur_tile: XYpair = to_explore.pop()
             to_explore |= self.neighbors(cur_tile) - area - self.loop
             area.add(cur_tile)
 
         return area
 
-    def enclosed_loop_area(self) -> set[Point]:
+    def enclosed_loop_area(self) -> set[XYpair]:
         for pipe in self.connections(self.start):
-            prev_pipe: Point = self.start
-            cur_pipe: Point = pipe
-            enclosed: set[Point] = set()
+            prev_pipe: XYpair = self.start
+            cur_pipe: XYpair = pipe
+            enclosed: set[XYpair] = set()
 
             while cur_pipe != self.start:
-                inside_tiles: set[Point] = self.inside(prev_pipe, cur_pipe)
-                new_enclosed: set[Point] = set()
+                inside_tiles: set[XYpair] = self.inside(prev_pipe, cur_pipe)
+                new_enclosed: set[XYpair] = set()
                 for pt in inside_tiles - enclosed:
                     new_enclosed |= self.explore_area(pt)
                 if not inside_tiles or any(self.on_edge(ex) for ex in new_enclosed):
                     break
                 enclosed |= new_enclosed
 
-                backwards: Point = prev_pipe
+                backwards: XYpair = prev_pipe
                 prev_pipe = cur_pipe
                 cur_pipe = [tile for tile in self.connections(cur_pipe) if tile != backwards][0]
 
             # Final loop iteration
             if cur_pipe == self.start:
                 inside_tiles = self.inside(prev_pipe, cur_pipe)
-                new_enclosed: set[Point] = set()
+                new_enclosed: set[XYpair] = set()
                 for pt in inside_tiles - enclosed:
                     new_enclosed |= self.explore_area(pt)
                 if not inside_tiles or any(self.on_edge(ex) for ex in new_enclosed):

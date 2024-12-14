@@ -2,25 +2,25 @@ import typing
 import math
 import functools
 
-CubeTuple: typing.TypeAlias = tuple[int, ...]
+XYZtuple: typing.TypeAlias = tuple[int, ...]
 
 
 def accept_tuple(func: typing.Callable) -> typing.Callable:
     @functools.wraps(func)
-    def wrapper(cube_or_tuple: CubeTuple, *args, **kwargs):
-        return func(Cube(*cube_or_tuple), *args, **kwargs)
+    def wrapper(trio_or_tuple: XYZtuple, *args, **kwargs):
+        return func(XYZtrio(*trio_or_tuple), *args, **kwargs)
     return wrapper
 
 
 def accept_tuple_method(func: typing.Callable) -> typing.Callable:
     @functools.wraps(func)
-    def wrapper(self, cube_or_tuple: CubeTuple, *args, **kwargs):
-        return func(self, Cube(*cube_or_tuple), *args, **kwargs)
+    def wrapper(self, trio_or_tuple: XYZtuple, *args, **kwargs):
+        return func(self, XYZtrio(*trio_or_tuple), *args, **kwargs)
     return wrapper
 
 
 @typing.final
-class Cube(typing.NamedTuple):
+class XYZtrio(typing.NamedTuple):
     x: int = 0
     y: int = 0
     z: int = 0
@@ -43,10 +43,10 @@ class Cube(typing.NamedTuple):
         return self
 
     def __neg__(self) -> typing.Self:
-        return Cube(-self.x, -self.y, -self.z)
+        return XYZtrio(-self.x, -self.y, -self.z)
 
     def __abs__(self) -> float:
         return self.distance(ORIGIN)
 
 
-ORIGIN: Cube = Cube(0, 0, 0)
+ORIGIN: XYZtrio = XYZtrio(0, 0, 0)

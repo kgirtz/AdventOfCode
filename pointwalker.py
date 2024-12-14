@@ -1,7 +1,7 @@
 import typing
 import enum
 
-import point
+import xypair
 
 
 @enum.unique
@@ -35,13 +35,13 @@ class Heading(enum.Enum):
 
 
 class State(typing.NamedTuple):
-    position: point.Point
+    position: xypair.XYpair
     heading: Heading
 
 
 class PointWalker:
     @typing.overload
-    def __init__(self, initial_position: point.PointTuple, initial_heading: Heading | str) -> None:
+    def __init__(self, initial_position: xypair.XYtuple, initial_heading: Heading | str) -> None:
         ...
 
     @typing.overload
@@ -52,11 +52,11 @@ class PointWalker:
         # position/heading are used for shallow copy, comparison, etc
         if len(args) == 1:
             walker: PointWalker = args[0]
-            self.position: point.Point = walker.position
+            self.position: xypair.XYpair = walker.position
             self.heading: Heading = walker.heading
         else:
             initial_position, initial_heading = args
-            self.position = point.Point(*initial_position)
+            self.position = xypair.XYpair(*initial_position)
             self.heading = initial_heading if isinstance(initial_heading, Heading) else Heading[initial_heading]
 
         # History data is turned off by default, user can turn it on, but it isn't copied except in deepcopy()
@@ -96,10 +96,10 @@ class PointWalker:
     def state(self) -> State:
         return State(self.position, self.heading)
 
-    def next(self) -> point.Point:
+    def next(self) -> xypair.XYpair:
         return self.peek()
 
-    def peek(self, direction: Direction | str = Direction.FORWARD, *, distance: int = 1) -> point.Point:
+    def peek(self, direction: Direction | str = Direction.FORWARD, *, distance: int = 1) -> xypair.XYpair:
         peek_heading: Heading = self.heading.rotate(direction)
         match peek_heading:
             case Heading.NORTH:
@@ -135,10 +135,10 @@ class PointWalker:
             self.history.append(self.state())
             self.visited.add(self.state())
 
-    def visited_points(self) -> set[point.Point]:
+    def visited_points(self) -> set[xypair.XYpair]:
         return {pt for pt, _ in self.history} | {self.position}
 
-    def initial_position(self) -> point.Point:
+    def initial_position(self) -> xypair.XYpair:
         return self.initial_state.position
 
     def initial_heading(self) -> Heading:

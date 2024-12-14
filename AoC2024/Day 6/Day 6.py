@@ -3,7 +3,7 @@ import sys
 import os
 from collections import defaultdict
 
-from point import Point
+from xypair import XYpair
 from space import Space
 
 TURN_RIGHT: dict[str, str] = {'^': '>',
@@ -16,16 +16,16 @@ class Lab(Space):
     def __init__(self, in_put) -> None:
         super().__init__(in_put)
 
-        self.obstacles: set[Point] = self.items['#']
-        self.guard_starting_position: Point = self.initial_position('^')
+        self.obstacles: set[XYpair] = self.items['#']
+        self.guard_starting_position: XYpair = self.initial_position('^')
 
-    def path(self) -> set[Point]:
-        visited: set[Point] = set()
+    def path(self) -> set[XYpair]:
+        visited: set[XYpair] = set()
         cur_dir: str = '^'
-        cur_pos: Point = self.guard_starting_position
+        cur_pos: XYpair = self.guard_starting_position
         while self.in_space(cur_pos):
             visited.add(cur_pos)
-            next_pos: Point = self.get_next(cur_pos, cur_dir)
+            next_pos: XYpair = self.get_next(cur_pos, cur_dir)
             while next_pos in self.obstacles:
                 cur_dir = TURN_RIGHT[cur_dir]
                 next_pos = self.get_next(cur_pos, cur_dir)
@@ -33,12 +33,12 @@ class Lab(Space):
         return visited
 
     def loops(self) -> bool:
-        visited: dict[Point, set[str]] = defaultdict(set)
+        visited: dict[XYpair, set[str]] = defaultdict(set)
         cur_dir: str = '^'
-        cur_pos: Point = self.guard_starting_position
+        cur_pos: XYpair = self.guard_starting_position
         while self.in_space(cur_pos):
             visited[cur_pos].add(cur_dir)
-            next_pos: Point = self.get_next(cur_pos, cur_dir)
+            next_pos: XYpair = self.get_next(cur_pos, cur_dir)
             while next_pos in self.obstacles:
                 cur_dir = TURN_RIGHT[cur_dir]
                 next_pos = self.get_next(cur_pos, cur_dir)
@@ -50,7 +50,7 @@ class Lab(Space):
         return False
 
     @staticmethod
-    def get_next(pos: Point, direction: str) -> Point:
+    def get_next(pos: XYpair, direction: str) -> XYpair:
         match direction:
             case '^':
                 return pos.up()
@@ -79,7 +79,7 @@ def part2(data):
     lab: Lab = Lab(data)
 
     num_loops: int = 0
-    possible: set[Point] = lab.path()
+    possible: set[XYpair] = lab.path()
     possible.remove(lab.guard_starting_position)
     for pt in possible:
         lab.obstacles.add(pt)
