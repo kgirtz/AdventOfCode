@@ -99,14 +99,6 @@ class Point(typing.NamedTuple):
     def manhattan_distance(self, start: typing.Self) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y)
 
-    @accept_tuple_method
-    def run(self, other: typing.Self) -> int:
-        return other.x - self.x
-
-    @accept_tuple_method
-    def rise(self, other: typing.Self) -> int:
-        return other.y - self.y
-
     def __add__(self, other: PointTuple) -> typing.Self:
         if isinstance(other, tuple):
             other = Point(*other)
