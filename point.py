@@ -26,6 +26,9 @@ class Point(typing.NamedTuple):
     def __str__(self) -> str:
         return str(tuple(self))
 
+    def __bool__(self) -> bool:
+        return self != ORIGIN
+
     def left(self) -> typing.Self:
         return Point(self.x - 1, self.y)
 
@@ -103,6 +106,44 @@ class Point(typing.NamedTuple):
     @accept_tuple_method
     def rise(self, other: typing.Self) -> int:
         return other.y - self.y
+
+    def __add__(self, other: PointTuple) -> typing.Self:
+        if isinstance(other, tuple):
+            other = Point(*other)
+            return Point(self.x + other.x, self.y + other.y)
+        return NotImplemented
+
+    def __radd__(self, other: typing.Any) -> typing.Self:
+        return self + other
+
+    def __sub__(self, other: PointTuple) -> typing.Self:
+        if isinstance(other, tuple):
+            other = Point(*other)
+            return Point(self.x - other.x, self.y - other.y)
+        return NotImplemented
+
+    def __rsub__(self, other: PointTuple) -> PointTuple:
+        if isinstance(other, tuple):
+            other = Point(*other)
+            return other.x - self.x, other.y - self.y
+        return NotImplemented
+
+    def __mul__(self, other: int) -> typing.Self:
+        if isinstance(other, int):
+            return Point(self.x * other, self.y * other)
+        return NotImplemented
+
+    def __rmul__(self, other: typing.Any) -> typing.Self:
+        return self * other
+
+    def __pos__(self) -> typing.Self:
+        return self
+
+    def __neg__(self) -> typing.Self:
+        return Point(-self.x, -self.y)
+
+    def __abs__(self) -> float:
+        return self.distance(ORIGIN)
 
 
 ORIGIN: Point = Point(0, 0)
