@@ -80,6 +80,15 @@ class Point(typing.NamedTuple):
     def adjacent(self, pt: PointTuple, *, include_corners: bool = False) -> bool:
         return pt in self.neighbors(include_corners=include_corners)
 
+    def collinear(self, pts: typing.Iterable[PointTuple]) -> bool:
+        pts = list(pts)
+        basis: Point = self - Point(*pts[0])
+        for pt in pts:
+            diff: Point = self - pt
+            if diff.x / basis.x != diff.y / basis.y:
+                return False
+        return True
+
     def neighbors(self, *, include_corners: bool = False, corners_only: bool = False) -> set[typing.Self]:
         diagonal: set[Point] = {self.up_right(), self.up_left(), self.down_right(), self.down_left()}
         if corners_only:
