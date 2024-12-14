@@ -19,6 +19,7 @@ def accept_tuple_method(func: typing.Callable) -> typing.Callable:
     return wrapper
 
 
+@typing.final
 class Point(typing.NamedTuple):
     x: int = 0
     y: int = 0
