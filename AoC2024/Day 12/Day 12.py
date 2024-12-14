@@ -36,8 +36,7 @@ class Region:
             walker.track_history = True
 
             cur_sides: int = 0
-            # while not walker.has_looped():  # TODO: bug
-            while not walker.returned_to_start() or cur_sides == 0:
+            while walker.state() != walker.initial_state or cur_sides == 0:
                 if walker.peek('LEFT') not in self.plots:
                     walker.turn('LEFT')
                     walker.step()

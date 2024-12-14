@@ -143,9 +143,3 @@ class PointWalker:
 
     def initial_heading(self) -> Heading:
         return self.initial_state.heading
-
-    def has_looped(self) -> bool:
-        return self.state() in self.visited
-
-    def returned_to_start(self) -> bool:
-        return self.state() == self.initial_state
