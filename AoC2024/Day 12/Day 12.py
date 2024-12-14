@@ -32,13 +32,12 @@ class Region:
                 continue
 
             # Left hand on wall
-            start: PointWalker = PointWalker(pt.down(), 'EAST')
-            walker: PointWalker = PointWalker(start)
+            walker: PointWalker = PointWalker(pt.down(), 'EAST')
             walker.track_history = True
 
             cur_sides: int = 0
             # while not walker.has_looped():  # TODO: bug
-            while walker != start or cur_sides == 0:
+            while not walker.returned_to_start() or cur_sides == 0:
                 if walker.peek('LEFT') not in self.plots:
                     walker.turn('LEFT')
                     walker.step()

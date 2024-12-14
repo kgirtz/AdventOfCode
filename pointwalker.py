@@ -49,6 +49,7 @@ class PointWalker:
         ...
 
     def __init__(self, *args) -> None:
+        # position/heading are used for shallow copy, comparison, etc
         if len(args) == 1:
             walker: PointWalker = args[0]
             self.position: point.Point = walker.position
@@ -58,8 +59,9 @@ class PointWalker:
             self.position = point.Point(*initial_position)
             self.heading = initial_heading if isinstance(initial_heading, Heading) else Heading[initial_heading]
 
+        # History data is turned off by default, user can turn it on, but it isn't copied except in deepcopy()
         self.initial_state: State = self.state()
-        self.track_history: bool = False  # must be set after creation if needed
+        self.track_history: bool = False
         self.history: list[State] = []
         self.visited: set[State] = set()
 
@@ -73,7 +75,7 @@ class PointWalker:
         return self.state() == other.state()
 
     def __len__(self) -> int:
-        return len(self.history)
+        return len(self.visited_points())
 
     def __copy__(self) -> typing.Self:
         return self.copy()
@@ -144,3 +146,6 @@ class PointWalker:
 
     def has_looped(self) -> bool:
         return self.state() in self.visited
+
+    def returned_to_start(self) -> bool:
+        return self.state() == self.initial_state
