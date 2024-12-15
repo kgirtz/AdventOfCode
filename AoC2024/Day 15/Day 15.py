@@ -21,56 +21,72 @@ class Warehouse(Space):
     def move_robot(self, direction: str) -> None:
         match direction:
             case '^':
-                pt: XYpair = self.robot
-                boxes: set[XYpair] = set()
-                while pt.up() not in self.walls:
-                    pt = pt.up()
-                    if pt in self.boxes:
-                        boxes.add(pt)
+                if self.robot.up() in self.walls:
+                    return
+                if self.robot.up() not in self.boxes:
+                    self.robot = self.robot.up()
+                    return
 
-                if empty_spaces := self.robot.manhattan_distance(pt) - len(boxes):
-                    self.robot = self.robot.up(empty_spaces)
-                    self.boxes -= boxes
-                    self.boxes |= {XYpair(pt.x, y) for y in range(pt.y, self.robot.y)}
+                not_box: XYpair = self.robot.up(2)
+                while not_box in self.boxes:
+                    not_box = not_box.up()
+                if not_box in self.walls:
+                    return
+
+                self.robot = self.robot.up()
+                self.boxes.remove(self.robot)
+                self.boxes.add(not_box)
 
             case 'v':
-                pt: XYpair = self.robot
-                boxes: set[XYpair] = set()
-                while pt.down() not in self.walls:
-                    pt = pt.down()
-                    if pt in self.boxes:
-                        boxes.add(pt)
+                if self.robot.down() in self.walls:
+                    return
+                if self.robot.down() not in self.boxes:
+                    self.robot = self.robot.down()
+                    return
 
-                if empty_spaces := self.robot.manhattan_distance(pt) - len(boxes):
-                    self.robot = self.robot.down(empty_spaces)
-                    self.boxes -= boxes
-                    self.boxes |= {XYpair(pt.x, y) for y in range(pt.y, self.robot.y, -1)}
+                not_box: XYpair = self.robot.down(2)
+                while not_box in self.boxes:
+                    not_box = not_box.down()
+                if not_box in self.walls:
+                    return
+
+                self.robot = self.robot.down()
+                self.boxes.remove(self.robot)
+                self.boxes.add(not_box)
 
             case '>':
-                pt: XYpair = self.robot
-                boxes: set[XYpair] = set()
-                while pt.right() not in self.walls:
-                    pt = pt.right()
-                    if pt in self.boxes:
-                        boxes.add(pt)
+                if self.robot.right() in self.walls:
+                    return
+                if self.robot.right() not in self.boxes:
+                    self.robot = self.robot.right()
+                    return
 
-                if empty_spaces := self.robot.manhattan_distance(pt) - len(boxes):
-                    self.robot = self.robot.right(empty_spaces)
-                    self.boxes -= boxes
-                    self.boxes |= {XYpair(x, pt.y) for x in range(pt.x, self.robot.x, -1)}
+                not_box: XYpair = self.robot.right(2)
+                while not_box in self.boxes:
+                    not_box = not_box.right()
+                if not_box in self.walls:
+                    return
+
+                self.robot = self.robot.right()
+                self.boxes.remove(self.robot)
+                self.boxes.add(not_box)
 
             case '<':
-                pt: XYpair = self.robot
-                boxes: set[XYpair] = set()
-                while pt.left() not in self.walls:
-                    pt = pt.left()
-                    if pt in self.boxes:
-                        boxes.add(pt)
+                if self.robot.left() in self.walls:
+                    return
+                if self.robot.left() not in self.boxes:
+                    self.robot = self.robot.left()
+                    return
 
-                if empty_spaces := self.robot.manhattan_distance(pt) - len(boxes):
-                    self.robot = self.robot.left(empty_spaces)
-                    self.boxes -= boxes
-                    self.boxes |= {XYpair(x, pt.y) for x in range(pt.x, self.robot.x)}
+                not_box: XYpair = self.robot.left(2)
+                while not_box in self.boxes:
+                    not_box = not_box.left()
+                if not_box in self.walls:
+                    return
+
+                self.robot = self.robot.left()
+                self.boxes.remove(self.robot)
+                self.boxes.add(not_box)
 
 
 def parse(puzzle_input: str):
@@ -91,7 +107,11 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    return data
+    warehouse_str, movement_str = data
+    warehouse: Warehouse = Warehouse(warehouse_str)
+    for d in movement_str:
+        warehouse.move_robot(d)
+    return sum(gps_coordinate(pt) for pt in warehouse.boxes)
 
 
 def solve(puzzle_input: str):
@@ -108,7 +128,7 @@ if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = 10092
-    PART2_TEST_ANSWER = None
+    PART2_TEST_ANSWER = 9021
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
