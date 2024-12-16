@@ -33,6 +33,12 @@ class Heading(enum.Enum):
         direction = typing.cast(Direction, direction)
         return tuple(Heading)[(self.value + direction.value) % len(Heading)]
 
+    def vertical(self) -> bool:
+        return self == Heading.NORTH or self == Heading.SOUTH
+
+    def horizontal(self) -> bool:
+        return self == Heading.EAST or self == Heading.WEST
+
 
 class State(typing.NamedTuple):
     position: xypair.XYpair
