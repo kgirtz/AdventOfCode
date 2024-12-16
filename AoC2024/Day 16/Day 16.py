@@ -1,16 +1,37 @@
 import pathlib
 import sys
 import os
+import functools
+
+from xypair import XYpair
+from pointwalker import PointWalker, Heading
+from space import Space
+
+
+class ReindeerMaze(Space):
+    def __init__(self, in_put) -> None:
+        super().__init__(in_put)
+
+        self.start: XYpair = self.initial_position('S')
+        self.end: XYpair = self.initial_position('E')
+        self.walls: set[XYpair] = self.items['#']
+
+    @functools.cache
+    def lowest_score(self, pos: XYpair, heading: Heading, visited: tuple[XYpair, ...] = tuple()) -> float:
+        score: float = float('inf')
+
+        return 0
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    maze: ReindeerMaze = ReindeerMaze(data)
+    return maze.lowest_score(maze.start, Heading.EAST)
 
 
 def part2(data):
@@ -31,7 +52,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 11048
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
