@@ -27,6 +27,28 @@ class Heading(enum.Enum):
     WEST = 6
     NORTHWEST = 7
 
+    @classmethod
+    def from_arrow(cls, arrow: str) -> typing.Self:
+        match arrow.lower():
+            case '^':
+                return Heading.NORTH
+            case '>':
+                return Heading.EAST
+            case 'v':
+                return Heading.SOUTH
+            case '<':
+                return Heading.WEST
+            case ['^>', '>^']:
+                return Heading.NORTHEAST
+            case['^<', '<^']:
+                return Heading.NORTHWEST
+            case ['v>', '>v']:
+                return Heading.SOUTHEAST
+            case ['v>', '>v']:
+                return Heading.SOUTHWEST
+            case _:
+                raise ValueError(f"invalid heading arrow '{arrow}'")
+
     def rotate(self, direction: Direction | str) -> typing.Self:
         if not isinstance(direction, Direction):
             direction = Direction[direction]
