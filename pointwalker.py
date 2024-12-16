@@ -33,6 +33,15 @@ class Heading(enum.Enum):
         direction = typing.cast(Direction, direction)
         return tuple(Heading)[(self.value + direction.value) % len(Heading)]
 
+    def right(self) -> typing.Self:
+        return self.rotate(Direction.RIGHT)
+
+    def left(self) -> typing.Self:
+        return self.rotate(Direction.LEFT)
+
+    def reverse(self) -> typing.Self:
+        return self.rotate(Direction.BACKWARD)
+
     def vertical(self) -> bool:
         return self == Heading.NORTH or self == Heading.SOUTH
 
