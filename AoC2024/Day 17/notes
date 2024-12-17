@@ -1,0 +1,9 @@
+start:
+    bst A               B = A & 0x7
+    bxl 0x5             B = B ^ 0x5
+    cdv B               C = A >> B
+    bxl 0x6             B = B ^ 0x6
+    adv 0x3             A = A >> 3
+    bxc                 B = B ^ C
+    out B               (B & 0x7) >> out  = (B ^ C) & 0x7
+    jnz start           if A: goto start
