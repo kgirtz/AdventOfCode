@@ -1,9 +1,11 @@
+import functools
 import pathlib
 import sys
 import os
+from typing import Iterable
 
 from xypair import XYpair
-from pointwalker import Heading
+from pointwalker import Heading, PointWalker
 from space import Space
 
 
@@ -75,6 +77,69 @@ class ReindeerMaze(Space):
 
         return path_points
 
+    @functools.cache
+    def dfs(self, pos: XYpair, heading: Heading, visited: Iterable[XYpair] = tuple(), max_score: float = float('inf')) -> (float, set[XYpair]):
+        if pos == self.end:
+            return 0, {self.end}
+
+        visited = set(visited)
+        visited.add(pos)
+
+        score: float = 0
+        path: set[XYpair] = {pos}
+
+        walker: PointWalker = PointWalker(pos, heading)
+        next_steps: set[XYpair] = walker.position.neighbors() - self.walls - visited
+        while len(next_steps) == 1:
+            target: XYpair = next_steps.pop()
+            if target == walker.peek('LEFT'):
+                walker.turn('LEFT')
+                score += 1000
+            elif target == walker.peek('RIGHT'):
+                walker.turn('RIGHT')
+                score += 1000
+            elif target == walker.peek('BACKWARD'):
+                walker.turn('BACKWARD')
+                score += 2000
+
+            walker.step()
+            path.add(walker.position)
+            score += 1
+            if walker.position == self.end:
+                return score, path
+            visited.add(walker.position)
+            next_steps = walker.position.neighbors() - self.walls - visited
+            if score > max_score:
+                return float('inf'), set()
+
+        if not next_steps:
+            return float('inf'), set()
+
+        lowest_score: float = float('inf')
+        lowest_path: set[XYpair] = set()
+        for target in next_steps:
+            sub_score: float = score
+            new_heading: Heading = walker.heading
+            if target == walker.peek('LEFT'):
+                new_heading = walker.heading.left()
+                sub_score += 1000
+            elif target == walker.peek('RIGHT'):
+                new_heading = walker.heading.right()
+                sub_score += 1000
+            sub_score += 1
+            if sub_score > max_score:
+                continue
+
+            new_sub_score, sub_path = self.dfs(target, new_heading, tuple(visited), lowest_score - score)
+            sub_score += new_sub_score
+            if sub_score < lowest_score:
+                lowest_score = sub_score
+                lowest_path = path | sub_path
+            elif sub_score == lowest_score:
+                lowest_path.update(path | sub_path)
+
+        return lowest_score, lowest_path
+
 
 def parse(puzzle_input: str):
     """Parse input"""
@@ -84,19 +149,22 @@ def parse(puzzle_input: str):
 def part1(data):
     """Solve part 1"""
     maze: ReindeerMaze = ReindeerMaze(data)
-    return maze.lowest_score()
+    #return maze.lowest_score()
+    return maze.dfs(maze.start, Heading.EAST)[0]
 
 
 def part2(data):
     """Solve part 2"""
     maze: ReindeerMaze = ReindeerMaze(data)
-    return len(maze.lowest_score_path_points())
+    #return len(maze.lowest_score_path_points())
+    return len(maze.dfs(maze.start, Heading.EAST)[1])
 
 
 def solve(puzzle_input: str):
     """Solve the puzzle for the given input"""
     data = parse(puzzle_input)
     solution1 = part1(data)
+    print('part 1 done')
     data = parse(puzzle_input)
     solution2 = part2(data)
 
@@ -106,8 +174,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = 7036#11048
-    PART2_TEST_ANSWER = 45#64
+    PART1_TEST_ANSWER = 11048
+    PART2_TEST_ANSWER = 64
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
