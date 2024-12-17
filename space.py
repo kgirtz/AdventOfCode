@@ -13,7 +13,6 @@ class Space:
 
         self.height: int = len(space_str)
         self.width: int = len(space_str[0])
-        self.tiles: list[str] = space_str
         self.items: dict[str, set[xypair.XYpair]] = collections.defaultdict(set)
         self.integer_values: bool = False
         self.default: str = default
@@ -25,11 +24,27 @@ class Space:
         self.items = dict(self.items)
 
     def __str__(self) -> str:
-        return '\n'.join(self.tiles)
+        lines: list[str] = []
+        for y in range(self.height):
+            line: str = ''
+            for x in range(self.width):
+                value: str = self.default
+                for item, pts in self.items.items():
+                    if (x, y) in pts:
+                        value = item
+                        break
+                line += value
+            lines.append(line)
+        return '\n'.join(lines)
 
     @xypair.accept_tuple_method
     def __getitem__(self, pt: xypair.XYpair) -> str:
-        value: str = self.tiles[pt.y][pt.x]
+        value: str = self.default
+        for item, pts in self.items.items():
+            if pt in pts:
+                value = item
+                break
+
         return int(value) if self.integer_values else value
 
     @xypair.accept_tuple_method
