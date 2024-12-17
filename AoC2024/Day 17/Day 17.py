@@ -91,14 +91,43 @@ def part2(data):
     (a, b, c), program = data
     computer: Computer = Computer()
 
-    output: str = ''
+    """output: str = ''
     program_str: str = ','.join(str(n) for n in program)
     initial_a: int = 0
     while output != program_str:
         initial_a += 1
         computer.set_registers(a=initial_a, b=b, c=c)
         output = computer.run(program, program)
-    return initial_a
+    return initial_a"""
+
+    program_str: str = ','.join(str(n) for n in program)
+    split_program_str: list[str] = program_str.split(',')
+    possible_A_values: set[int] = {0}
+    correct: set[int] = set()
+    for p in range(len(program)):
+        print(p)
+        new_possible: set[int] = set()
+        for a in range(1, pow(2, 10)):
+            a <<= p * 3
+            for possible in possible_A_values:
+                #num_bits: int = possible
+                #while num_bits:
+                #    num_bits >>= 1
+                #    a <<= 1
+                #print(a + possible)
+                computer.set_registers(a=a + possible, b=b, c=c)
+                result: str = computer.run(program)
+                if result == program_str:
+                    correct.add(a + possible)
+                if len(result) <= len(program_str) and split_program_str[:p + 1] == result.split(',')[:p + 1]:
+                    #print(f'a={a + possible} -> {result}')
+                    new_possible.add(a + possible)
+        possible_A_values = new_possible
+        #print(possible_A_values)
+        if correct:
+            print(min(correct))
+            return min(correct)
+    return min(possible_A_values)
 
 
 def solve(puzzle_input: str):
@@ -115,7 +144,7 @@ if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = '4,6,3,5,6,3,5,2,1,0'
-    PART2_TEST_ANSWER = None#117440
+    PART2_TEST_ANSWER = 117440
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
