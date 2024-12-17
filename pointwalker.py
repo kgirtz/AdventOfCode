@@ -51,7 +51,7 @@ class Heading(enum.Enum):
 
     def rotate(self, direction: Direction | str) -> typing.Self:
         if not isinstance(direction, Direction):
-            direction = Direction[direction]
+            direction = Direction[direction.upper()]
         direction = typing.cast(Direction, direction)
         return tuple(Heading)[(self.value + direction.value) % len(Heading)]
 
