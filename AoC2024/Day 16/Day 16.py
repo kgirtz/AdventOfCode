@@ -1,10 +1,9 @@
 import pathlib
 import sys
 import os
-import functools
 
 from xypair import XYpair
-from pointwalker import PointWalker, Heading
+from pointwalker import Heading
 from space import Space
 
 
@@ -16,11 +15,65 @@ class ReindeerMaze(Space):
         self.end: XYpair = self.initial_position('E')
         self.walls: set[XYpair] = self.items['#']
 
-    @functools.cache
-    def lowest_score(self, pos: XYpair, heading: Heading, visited: tuple[XYpair, ...] = tuple()) -> float:
-        score: float = float('inf')
+        self.score: dict[XYpair, int] = {}
+        self.heading: dict[XYpair, Heading] = {}
+        self.paths: dict[XYpair, set[tuple[XYpair, ...]]] = {}
 
-        return 0
+    def lowest_score(self) -> int:
+        current: set[XYpair] = {self.start}
+        new_pts: set[XYpair] = set()
+        self.score = {self.start: 0}
+        self.heading = {self.start: Heading.EAST}
+        self.paths = {self.start: {(self.start, )}}
+
+        while current:
+            while current:
+                pt: XYpair = current.pop()
+                targets: set[XYpair] = pt.neighbors() - self.walls
+
+                for target in targets:
+                    cur_score: int = self.score[pt] + 1
+                    move_heading: Heading = Heading.NORTH
+                    if target == pt.left():
+                        move_heading = Heading.WEST
+                    elif target == pt.right():
+                        move_heading = Heading.EAST
+                    elif target == pt.down():
+                        move_heading = Heading.SOUTH
+
+                    if move_heading != self.heading[pt]:
+                        cur_score += 1000
+
+                    if target in self.score and cur_score > self.score[target]:
+                        continue
+
+                    target_paths: set[tuple[XYpair, ...]] = {path + (target,) for path in self.paths[pt]}
+                    if cur_score == self.score.get(target, 0):
+                        self.paths[target].update(target_paths)
+
+                    elif target not in self.score or cur_score < self.score[target]:
+                        self.score[target] = cur_score
+                        self.heading[target] = move_heading
+                        self.paths[target] = target_paths
+                        new_pts.add(target)
+
+            current = new_pts
+            new_pts = set()
+
+        return self.score[self.end]
+
+    def lowest_score_path_points(self) -> set[XYpair]:
+        self.lowest_score()
+        path_points: set[XYpair] = set()
+        for path in self.paths[self.end]:
+            path_points.update(path)
+            self.items['O'] = set(path)
+            print(self)
+            print()
+            del self.items['O']
+        print(len(path_points))
+
+        return path_points
 
 
 def parse(puzzle_input: str):
@@ -31,12 +84,13 @@ def parse(puzzle_input: str):
 def part1(data):
     """Solve part 1"""
     maze: ReindeerMaze = ReindeerMaze(data)
-    return maze.lowest_score(maze.start, Heading.EAST)
+    return maze.lowest_score()
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    maze: ReindeerMaze = ReindeerMaze(data)
+    return len(maze.lowest_score_path_points())
 
 
 def solve(puzzle_input: str):
@@ -52,8 +106,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = 11048
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 7036#11048
+    PART2_TEST_ANSWER = 45#64
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
