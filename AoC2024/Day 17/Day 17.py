@@ -28,17 +28,12 @@ class Computer:
         if c is not None:
             self.C = int(c)
 
-    def run(self, program: Sequence[int], expected_output: Sequence[int] = tuple()) -> str:
-        expected_output = list(reversed(expected_output))
-        check_expected: bool = bool(expected_output)
-
+    def run(self, program: Sequence[int]) -> str:
         self.IP = 0
         self.output = []
         while self.IP < len(program):
             opcode, operand = program[self.IP:self.IP + 2]
-            next_output: int | None = self.execute(opcode, operand)
-            if check_expected and next_output is not None and (not expected_output or next_output != expected_output.pop()):
-                break
+            self.execute(opcode, operand)
             self.IP += 2
         return ','.join(str(n) for n in self.output)
 
@@ -91,43 +86,26 @@ def part2(data):
     (a, b, c), program = data
     computer: Computer = Computer()
 
-    """output: str = ''
-    program_str: str = ','.join(str(n) for n in program)
-    initial_a: int = 0
-    while output != program_str:
-        initial_a += 1
-        computer.set_registers(a=initial_a, b=b, c=c)
-        output = computer.run(program, program)
-    return initial_a"""
-
     program_str: str = ','.join(str(n) for n in program)
     split_program_str: list[str] = program_str.split(',')
-    possible_A_values: set[int] = {0}
+
+    possible_a_values: set[int] = {0}
     correct: set[int] = set()
     for p in range(len(program)):
         print(p)
         new_possible: set[int] = set()
         for a in range(1, pow(2, 10)):
             a <<= p * 3
-            for possible in possible_A_values:
-                #num_bits: int = possible
-                #while num_bits:
-                #    num_bits >>= 1
-                #    a <<= 1
-                #print(a + possible)
+            for possible in sorted(possible_a_values):
                 computer.set_registers(a=a + possible, b=b, c=c)
                 result: str = computer.run(program)
-                if result == program_str:
-                    correct.add(a + possible)
                 if len(result) <= len(program_str) and split_program_str[:p + 1] == result.split(',')[:p + 1]:
-                    #print(f'a={a + possible} -> {result}')
                     new_possible.add(a + possible)
-        possible_A_values = new_possible
-        #print(possible_A_values)
+                    if result == program_str:
+                        correct.add(a + possible)
         if correct:
-            print(min(correct))
             return min(correct)
-    return min(possible_A_values)
+        possible_a_values = new_possible
 
 
 def solve(puzzle_input: str):
