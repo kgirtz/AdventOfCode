@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+import heapq
 
 from xypair import XYpair, ORIGIN
 from space import Space
@@ -11,60 +12,42 @@ class MemorySpace(Space):
         super().__init__(in_put)
 
         self.corrupted: set[XYpair] = set()
+        self.start: XYpair = ORIGIN
+        self.exit: XYpair = XYpair(self.width - 1, self.height - 1)
 
     def shortest_path(self) -> int:
-        current: set[XYpair] = {ORIGIN}
-        new_pts: set[XYpair] = set()
-        distance: dict[XYpair, int] = {ORIGIN: 0}
-        # paths: dict[XYpair, set[tuple[XYpair, ...]]] = {ORIGIN: {(ORIGIN,)}}
-
+        current: set[XYpair] = {self.start}
+        distance: dict[XYpair, int] = {self.start: 0}
         while current:
-            while current:
-                pt: XYpair = current.pop()
-                targets: set[XYpair] = self.neighbors(pt) - self.corrupted
-
-                for target in targets:
-                    cur_score: int = distance[pt] + 1
-
-                    if target in distance and cur_score > distance[target]:
-                        continue
-
-                    # target_paths: set[tuple[XYpair, ...]] = {path + (target,) for path in paths[pt]}
-                    # if cur_score == distance.get(target, 0):
-                    #    paths[target].update(target_paths)
-
-                    elif target not in distance or cur_score < distance[target]:
-                        distance[target] = cur_score
-                        # paths[target] = target_paths
-                        new_pts.add(target)
-
-            current = new_pts
-            new_pts = set()
-
-        exit_pt: XYpair = XYpair(self.width - 1, self.height - 1)
-        return distance.get(exit_pt, -1)
+            pt: XYpair = current.pop()
+            targets: set[XYpair] = self.neighbors(pt) - self.corrupted - distance.keys() - current
+            current.update(targets)
+            for target in targets:
+                distance[target] = distance[pt] + 1
+        return distance.get(self.exit, -1)
 
     def path_exists(self) -> int:
-        exit_pt: XYpair = XYpair(self.width - 1, self.height - 1)
-
         finished_start: set[XYpair] = set()
         finished_end: set[XYpair] = set()
-        current_start: set[XYpair] = {ORIGIN}
-        current_end: set[XYpair] = {exit_pt}
+        current_start: list[tuple[int, XYpair]] = [(self.start.distance(self.exit), self.start)]
+        current_end: list[tuple[int, XYpair]] = [(self.exit.distance(self.start), self.exit)]
 
         while current_start and current_end:
-            start_pt: XYpair = current_start.pop()
+            _, start_pt = heapq.heappop(current_start)
             finished_start.add(start_pt)
             targets: set[XYpair] = self.neighbors(start_pt) - self.corrupted - finished_start
-            current_start.update(targets)
+            if targets & finished_end:
+                return True
+            for target in targets:
+                heapq.heappush(current_start, (target.distance(self.exit), target))
 
-            end_pt: XYpair = current_end.pop()
+            _, end_pt = heapq.heappop(current_end)
             finished_end.add(end_pt)
             targets = self.neighbors(end_pt) - self.corrupted - finished_end
-            current_end.update(targets)
-
-            if (finished_start | current_start) & (finished_end | current_end):
+            if targets & finished_start:
                 return True
+            for target in targets:
+                heapq.heappush(current_end, (target.distance(self.start), target))
 
         return False
 
