@@ -5,7 +5,7 @@ import os
 from typing import Iterable
 
 from xypair import XYpair
-from pointwalker import Heading, PointWalker
+from pointwalker import State, Heading, PointWalker
 from space import Space
 
 
@@ -17,64 +17,77 @@ class ReindeerMaze(Space):
         self.end: XYpair = self.initial_position('E')
         self.walls: set[XYpair] = self.items['#']
 
-        self.score: dict[XYpair, int] = {}
-        self.heading: dict[XYpair, Heading] = {}
-        self.paths: dict[XYpair, set[tuple[XYpair, ...]]] = {}
+        self.score: dict[State, int] = {}
+        self.paths: dict[State, set[tuple[State, ...]]] = {}
 
     def lowest_score(self) -> int:
-        current: set[XYpair] = {self.start}
-        new_pts: set[XYpair] = set()
-        self.score = {self.start: 0}
-        self.heading = {self.start: Heading.EAST}
-        self.paths = {self.start: {(self.start, )}}
+        init_state: State = State(self.start, Heading.EAST)
+        current: set[State] = {init_state}
+        new_pts: set[State] = set()
+        self.score = {init_state: 0}
+        self.paths = {init_state: {(init_state, )}}
 
         while current:
             while current:
-                pt: XYpair = current.pop()
-                targets: set[XYpair] = pt.neighbors() - self.walls
+                pt: State = current.pop()
+                forward: PointWalker = PointWalker(pt.position, pt.heading)
+                targets: set[State] = set()
+                cur_score: int = self.score[pt]
 
-                for target in targets:
-                    cur_score: int = self.score[pt] + 1
-                    move_heading: Heading = Heading.NORTH
-                    if target == pt.left():
-                        move_heading = Heading.WEST
-                    elif target == pt.right():
-                        move_heading = Heading.EAST
-                    elif target == pt.down():
-                        move_heading = Heading.SOUTH
+                # Move forward
+                if forward.next() not in self.walls:
+                    next_pt: State = State(forward.next(), pt.heading)
+                    next_score: int = cur_score + 1
+                    if next_pt not in self.score or next_score <= self.score[next_pt]:
+                        target_paths: set[tuple[State, ...]] = {path + (next_pt,) for path in self.paths[pt]}
+                        if next_score == self.score.get(next_pt, 0):
+                            self.paths[next_pt].update(target_paths)
+                        else:
+                            self.paths[next_pt] = target_paths
+                        self.score[next_pt] = next_score
+                        new_pts.add(next_pt)
 
-                    if move_heading != self.heading[pt]:
-                        cur_score += 1000
+                # Turn left
+                next_pt = State(pt.position, pt.heading.left())
+                next_score = cur_score + 1000
+                if next_pt not in self.score or next_score <= self.score[next_pt]:
+                    target_paths: set[tuple[State, ...]] = {path + (next_pt,) for path in self.paths[pt]}
+                    if next_score == self.score.get(next_pt, 0):
+                        self.paths[next_pt].update(target_paths)
+                    else:
+                        self.paths[next_pt] = target_paths
+                    self.score[next_pt] = next_score
+                    new_pts.add(next_pt)
 
-                    if target in self.score and cur_score > self.score[target]:
-                        continue
-
-                    target_paths: set[tuple[XYpair, ...]] = {path + (target,) for path in self.paths[pt]}
-                    if cur_score == self.score.get(target, 0):
-                        self.paths[target].update(target_paths)
-
-                    elif target not in self.score or cur_score < self.score[target]:
-                        self.score[target] = cur_score
-                        self.heading[target] = move_heading
-                        self.paths[target] = target_paths
-                        new_pts.add(target)
+                # Turn right
+                next_pt = State(pt.position, pt.heading.right())
+                next_score = cur_score + 1000
+                if next_pt not in self.score or next_score <= self.score[next_pt]:
+                    target_paths: set[tuple[State, ...]] = {path + (next_pt,) for path in self.paths[pt]}
+                    if next_score == self.score.get(next_pt, 0):
+                        self.paths[next_pt].update(target_paths)
+                    else:
+                        self.paths[next_pt] = target_paths
+                    self.score[next_pt] = next_score
+                    new_pts.add(next_pt)
 
             current = new_pts
             new_pts = set()
 
-        return self.score[self.end]
+        return min(self.score[State(self.end, heading)] for heading in (Heading.NORTH, Heading.EAST, Heading.SOUTH, Heading.WEST))
 
-    def lowest_score_path_points(self) -> set[XYpair]:
+    def lowest_score_path_points(self) -> set:
         self.lowest_score()
         path_points: set[XYpair] = set()
-        for path in self.paths[self.end]:
-            path_points.update(path)
-            self.items['O'] = set(path)
-            print(self)
-            print()
-            del self.items['O']
-        print(len(path_points))
-
+        min_score: int = min(self.score[State(self.end, heading)] for heading in (Heading.NORTH, Heading.EAST, Heading.SOUTH, Heading.WEST))
+        for heading in (Heading.NORTH, Heading.EAST, Heading.SOUTH, Heading.WEST):
+            for path in self.paths[State(self.end, heading)]:
+                if self.score[State(self.end, heading)] == min_score:
+                    path_points.update(s.position for s in path)
+                    # self.items['O'] = {s.position for s in path}
+                    # print(self)
+                    # print()
+                    # del self.items['O']
         return path_points
 
     @functools.cache
@@ -149,22 +162,21 @@ def parse(puzzle_input: str):
 def part1(data):
     """Solve part 1"""
     maze: ReindeerMaze = ReindeerMaze(data)
-    #return maze.lowest_score()
-    return maze.dfs(maze.start, Heading.EAST)[0]
+    return maze.lowest_score()
+    # return maze.dfs(maze.start, Heading.EAST)[0]
 
 
 def part2(data):
     """Solve part 2"""
     maze: ReindeerMaze = ReindeerMaze(data)
-    #return len(maze.lowest_score_path_points())
-    return len(maze.dfs(maze.start, Heading.EAST)[1])
+    return len(maze.lowest_score_path_points())
+    #return len(maze.dfs(maze.start, Heading.EAST)[1])
 
 
 def solve(puzzle_input: str):
     """Solve the puzzle for the given input"""
     data = parse(puzzle_input)
     solution1 = part1(data)
-    print('part 1 done')
     data = parse(puzzle_input)
     solution2 = part2(data)
 
