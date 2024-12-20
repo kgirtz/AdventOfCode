@@ -40,7 +40,7 @@ class Heading(enum.Enum):
                 return Heading.WEST
             case ['^>', '>^']:
                 return Heading.NORTHEAST
-            case['^<', '<^']:
+            case ['^<', '<^']:
                 return Heading.NORTHWEST
             case ['v>', '>v']:
                 return Heading.SOUTHEAST
