@@ -101,6 +101,21 @@ class XYpair(typing.NamedTuple):
 
         return orthogonal
 
+    def surrounding(self, radius: int) -> set[typing.Self]:
+        pts: set[XYpair] = set()
+        edge: set[XYpair] = {self}
+        for _ in range(radius):
+            new_edge: set[XYpair] = set()
+            while edge:
+                pt: XYpair = edge.pop()
+                new_edge.update(pt.neighbors() - pts)
+                pts.add(pt)
+            edge = new_edge
+            pts.update(edge)
+
+        pts.discard(self)
+        return pts
+
     @accept_tuple_method
     def distance(self, start: typing.Self) -> float:
         return math.hypot(self.x - start.x, self.y - start.y)

@@ -76,6 +76,22 @@ class Space:
     def neighbors(self, pt: xypair.XYpair, *args, **kwargs) -> set[xypair.XYpair]:
         return {n for n in pt.neighbors(*args, **kwargs) if self.in_space(n)}
 
+    @xypair.accept_tuple_method
+    def surrounding(self, pt: xypair.XYpair, radius: int) -> set[xypair.XYpair]:
+        pts: set[xypair.XYpair] = set()
+        edge: set[xypair.XYpair] = {pt}
+        for _ in range(radius):
+            new_edge: set[xypair.XYpair] = set()
+            while edge:
+                pt: xypair.XYpair = edge.pop()
+                new_edge.update(n for n in pt.neighbors() - pts if self.in_space(n))
+                pts.add(pt)
+            edge = new_edge
+            pts.update(edge)
+
+        pts.discard(pt)
+        return pts
+
     def initial_position(self, item: str) -> xypair.XYpair:
         pts: tuple[xypair.XYpair, ...] = tuple(self.items[item])
         if len(pts) != 1:
