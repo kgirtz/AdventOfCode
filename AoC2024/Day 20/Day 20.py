@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+import collections
 from typing import Generator
 
 from space import Space
@@ -14,48 +15,40 @@ class Racetrack(Space):
         self.start: XYpair = self.initial_position('S')
         self.end: XYpair = self.initial_position('E')
         self.walls: set[XYpair] = self.items['#']
-        self.base_time: dict[XYpair, int] = {self.start: 0}
+        self.cheats: dict[XYpair, set[XYpair]] = collections.defaultdict(set)
 
         cur_pt: XYpair = self.start
         prev_pt: XYpair = self.start
-        distance: int = 0
+        self.track: list[XYpair] = [self.start]
         while cur_pt != self.end:
-            prev_pt, cur_pt = cur_pt, tuple(self.neighbors(cur_pt) - {prev_pt} - self.walls)[0]
-            distance += 1
-            self.base_time[cur_pt] = distance
+            prev_pt, cur_pt = cur_pt, (self.neighbors(cur_pt) - {prev_pt} - self.walls).pop()
+            self.track.append(cur_pt)
+        
+        self.base_time: dict[XYpair, int] = {}
+        for i, pt in enumerate(self.track):
+            self.base_time[pt] = i
 
     def time_from_start(self, pt: XYpair) -> int:
         return self.base_time[pt]
 
     def time_to_end(self, pt: XYpair) -> int:
         return self.base_time[self.end] - self.base_time[pt]
+    
+    def iter_cheats(self) -> Generator[tuple[XYpair, XYpair], None, None]:
+        for start in self.cheats:
+            for finish in self.cheats[start]:
+                yield start, finish
 
-    def cheats(self, length: int) -> Generator[tuple[XYpair, XYpair], None, None]:
-        for wall in self.walls:
-            adjacent_tracks: set[XYpair] = self.neighbors(wall) - self.walls
-            if len(adjacent_tracks) >= 2:
-                earliest_step_time: int = max(self.time_to_end(t) for t in adjacent_tracks)
-                for track in adjacent_tracks:
-                    if self.time_to_end(track) != earliest_step_time:
-                        yield wall, track
+    def find_cheats(self, max_cheat_time: int = 2) -> None:
+        for cheat_time in range(2, max_cheat_time + 1):
+            print(f'Cheat time = {cheat_time}')
+            for i, start in enumerate(self.track[:-(cheat_time + 1)]):
+                for finish in self.surrounding(start, cheat_time).intersection(self.track[i + cheat_time:]):
+                    if finish not in self.cheats[start] and self.time_saved(start, finish) > 0:
+                        self.cheats[start].add(finish)
 
-    def time_saved(self, cheat: tuple[XYpair, XYpair]) -> int:
-        wall, track = cheat
-        adjacent_tracks: set[XYpair] = self.neighbors(wall) - self.walls
-        start_time: int = min(self.time_from_start(t) for t in adjacent_tracks)
-        end_time: int = self.time_from_start(track)
-        return end_time - start_time - 2
-
-    """def base_time(self) -> int:
-        current: set[XYpair] = {self.start}
-        distance: dict[XYpair, int] = {self.start: 0}
-        while current:
-            pt: XYpair = current.pop()
-            targets: set[XYpair] = self.neighbors(pt) - self.corrupted - distance.keys() - current
-            current.update(targets)
-            for target in targets:
-                distance[target] = distance[pt] + 1
-        return distance.get(self.exit, -1)"""
+    def time_saved(self, start: XYpair, finish: XYpair) -> int:
+        return self.base_time[finish] - self.base_time[start] - start.manhattan_distance(finish)
 
 
 def parse(puzzle_input: str):
@@ -64,23 +57,23 @@ def parse(puzzle_input: str):
 
 
 def part1(data):
-    """Solve part 1"""  # 1461 is too high
+    """Solve part 1"""
     track: Racetrack = Racetrack(data)
-    return sum(track.time_saved(cheat) >= 100 for cheat in track.cheats(2))
+    track.find_cheats(2)
+    return sum(track.time_saved(start, finish) >= 100 for start, finish in track.iter_cheats())
 
 
 def part2(data):
     """Solve part 2"""
     track: Racetrack = Racetrack(data)
-    """cheat_savings: dict[int, int] = {}
-        for cheat in track.cheats():
-            savings: int = track.time_saved(cheat)
-            if savings not in cheat_savings:
-                cheat_savings[savings] = 0
-            cheat_savings[savings] += 1
-        for k, v in sorted(cheat_savings.items()):
-            print(f'There are {v} cheats that save {k} picoseconds.')"""
-    return sum(track.time_saved(cheat) >= 100 for cheat in track.cheats(20))
+    track.find_cheats(20)
+    """cheat_savings: dict[int, int] = collections.defaultdict(int)
+    for start, finish in track.iter_cheats():
+        savings: int = track.time_saved(start, finish)
+        cheat_savings[savings] += 1
+    for k, v in sorted(cheat_savings.items()):
+        print(f'There are {v} cheats that save {k} picoseconds.')"""
+    return sum(track.time_saved(start, finish) >= 100 for start, finish in track.iter_cheats())
 
 
 def solve(puzzle_input: str):
