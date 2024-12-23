@@ -1,16 +1,41 @@
 import pathlib
 import sys
 import os
+import collections
+from typing import Iterable
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return [line.split('-') for line in puzzle_input.split('\n')]
+
+
+def network_graph(connections: Iterable[Iterable[str]]) -> dict[str, set[str]]:
+    graph: dict[str, set[str]] = collections.defaultdict(set)
+    for a, b in connections:
+        graph[a].add(b)
+        graph[b].add(a)
+    return graph
+
+
+def interconnected_trios(graph: dict[str, set[str]]) -> set[tuple[str, str, str]]:
+    trios: set[tuple[str, str, str]] = set()
+    for node, connections in graph.items():
+        connections = list(connections)
+        for i, first in enumerate(connections[:-1]):
+            for second in connections[i + 1:]:
+                if second in graph[first]:
+                    trios.add(tuple(sorted((node, first, second))))  # noqa
+    return trios
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    total: int = 0
+    for trio in interconnected_trios(network_graph(data)):
+        if any(name.startswith('t') for name in trio):
+            total += 1
+    return total
 
 
 def part2(data):
@@ -31,8 +56,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 7
+    PART2_TEST_ANSWER = 'co,de,ka,ta'
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
