@@ -3,14 +3,26 @@ import sys
 import os
 
 
+def next_secret_number(secret_number: int, iterations: int = 1) -> int:
+    for i in range(iterations):
+        secret_number = prune((secret_number << 6) ^ secret_number)
+        secret_number = prune((secret_number >> 5) ^ secret_number)
+        secret_number = prune((secret_number << 11) ^ secret_number)
+    return secret_number
+
+
+def prune(num: int) -> int:
+    return num % 16777216
+
+
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return [int(line) for line in puzzle_input.split('\n')]
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return sum(next_secret_number(n, 2000) for n in data)
 
 
 def part2(data):
@@ -31,7 +43,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 37327623
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
