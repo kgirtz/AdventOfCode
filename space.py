@@ -93,7 +93,7 @@ class Space:
         return pts
 
     def initial_position(self, item: str) -> xypair.XYpair:
-        pts: tuple[xypair.XYpair, ...] = tuple(self.items[item])
-        if len(pts) != 1:
-            raise ValueError(f"more than one '{item}' found")
-        return pts[0]
+        pts: list[xypair.XYpair] = list(self.items[item])
+        if len(pts) > 1:
+            raise ValueError(f"more than one {item} found")
+        return pts.pop()
