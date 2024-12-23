@@ -7,15 +7,15 @@ import functools
 def parse(puzzle_input: str):
     """Parse input"""
     towels_str, patterns_str = puzzle_input.split('\n\n')
-    towels: tuple[str, ...] = tuple(towels_str.split(', '))
+    towels: frozenset[str] = frozenset(towels_str.split(', '))
     patterns: list[str] = patterns_str.split('\n')
     return towels, patterns
 
 
 @functools.cache
-def possible(pattern: str, towels: tuple[str, ...]) -> int:
+def possible(pattern: str, towels: frozenset[str]) -> int:
     num_matches: int = 0
-    if pattern in set(towels):
+    if pattern in towels:
         num_matches += 1
     for i in range(1, len(pattern)):
         if pattern[:i] in towels:
@@ -26,14 +26,12 @@ def possible(pattern: str, towels: tuple[str, ...]) -> int:
 def part1(data):
     """Solve part 1"""
     towels, patterns = data
-    towels = tuple(sorted(towels, key=len, reverse=True))
     return sum(bool(possible(pattern, towels)) for pattern in patterns)
 
 
 def part2(data):
     """Solve part 2"""
     towels, patterns = data
-    towels = tuple(sorted(towels, key=len, reverse=True))
     return sum(possible(pattern, towels) for pattern in patterns)
 
 
