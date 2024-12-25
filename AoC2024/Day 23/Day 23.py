@@ -29,26 +29,6 @@ def fully_connected_trios(graph: dict[str, set[str]]) -> set[frozenset[str]]:
     return trios
 
 
-def fully_connected_groups(graph: dict[str, set[str]]) -> set[frozenset[str]]:
-    groups: set[frozenset[str]] = fully_connected_trios(graph)
-    new_groups: set[frozenset[str]] = set()
-    changed: bool = True
-    while changed and len(groups) > 1:
-        changed = False
-        group_list: list[frozenset[str]] = list(groups)
-        print(f'{len(groups)} groups to check...')
-        for i, group1 in enumerate(group_list[:-1]):
-            if i % 1000 == 0:
-                print(i)
-            for group2 in group_list[i + 1:]:
-                if is_fully_connected(set(group1 ^ group2), graph):
-                    changed = True
-                    new_groups.add(group1 | group2)
-        groups = new_groups
-        new_groups = set()
-    return groups
-
-
 def largest_fully_connected_group(graph: dict[str, set[str]]) -> set[str]:
     groups: set[frozenset[str]] = fully_connected_trios(graph)
     largest_group: set[str] = set()
@@ -59,24 +39,15 @@ def largest_fully_connected_group(graph: dict[str, set[str]]) -> set[str]:
     return largest_group
 
 
-def fully_connected_group(trio: frozenset[str], graph: dict[str, set[str]]) -> set[str]:
-    group: set[str] = set(trio)
-    node: str = tuple(trio)[0]
-    possible_members: set[str] = graph[node] - group
+def fully_connected_group(group: Iterable[str], graph: dict[str, set[str]]) -> set[str]:
+    node: str = tuple(group)[0]
+    full_group: set[str] = set(group)
+    possible_members: set[str] = graph[node].difference(group)
     while possible_members:
         member: str = possible_members.pop()
-        if group.issubset(graph[member]):
-            group.add(member)
-    return group
-
-
-def is_fully_connected(group: set[str], graph: dict[str, set[str]]) -> bool:
-    if len(group) <= 1:
-        return True
-    member: str = group.pop()
-    if group.issubset(graph[member]):
-        return is_fully_connected(group, graph)
-    return False
+        if full_group.issubset(graph[member]):
+            full_group.add(member)
+    return full_group
 
 
 def password(computers: Iterable[str]) -> str:
@@ -92,7 +63,6 @@ def part1(data):
 def part2(data):
     """Solve part 2"""
     graph: dict[str, set[str]] = network_graph(data)
-    #return password(max(fully_connected_groups(graph), key=len))
     return password(largest_fully_connected_group(graph))
 
 
