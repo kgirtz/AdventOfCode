@@ -1,24 +1,15 @@
 import pathlib
 import sys
 import os
-from typing import Sequence
 
 
 class Gate:
     def __init__(self, definition: str) -> None:
         pieces: list[str] = definition.split()
 
-        self.inputs: list[str] = [pieces[0], pieces[2]]
+        self.inputs: frozenset[str] = frozenset((pieces[0], pieces[2]))
         self.operation: str = pieces[1]
         self.output: str = pieces[4]
-
-        self.inputs.sort()
-
-        self.annotated_inputs: list[str] = []
-        self.annotated_output: str = ''
-
-    def __hash__(self) -> int:
-        return hash(tuple(self.inputs) + (self.operation, self.output))
 
     def evaluate(self, input1: bool | None, input2: bool | None) -> bool | None:
         match self.operation:
@@ -52,56 +43,49 @@ def propagate(wires: dict[str, bool], gates: dict[str, Gate]) -> None:
 
 
 def bus_value(bus: str, wires: dict[str, str]) -> int:
-    bits: Sequence[str] = sorted((wire for wire in wires if wire.startswith(bus)), reverse=True)
+    bits: list[str] = sorted((wire for wire in wires if wire.startswith(bus)), reverse=True)
     return int(''.join(str(int(wires[bit])) for bit in bits), 2)
 
 
-def swapped_wires(wires: dict[str, bool], gates: dict[str, Gate], num_swaps: int) -> set[str]:
+def swapped_wires(gates: dict[str, Gate], num_swaps: int) -> set[str]:
+    """ Logical circuit structure:
+        z00   =  x00  XOR y00                c00  =  x00  AND y00
+        z[N]  = (x[N] XOR y[N]) XOR c[N-1]   c[N] = (x[N] AND y[N]) OR ((x[N] XOR y[N]) AND c[N-1])
+        z[45] = c[44]
+    """
     incorrect: set[str] = set()
     for output, gate in gates.items():
+        internal_inputs: set[str] = gate.inputs & gates.keys()
+
         match gate.operation:
             case 'OR':
+                # z values never come directly from OR gates (except the final carry bit)
                 if output.startswith('z') and output != 'z45':
                     incorrect.add(output)
-                for inp in gate.inputs:
-                    if gates[inp].operation != 'AND':
-                        incorrect.add(inp)
+
+                # All inputs to OR gates must come from AND gates
+                incorrect.update(i for i in gate.inputs if gates[i].operation != 'AND')
+
             case 'AND':
+                # z values never come directly from AND gates
                 if output.startswith('z'):
                     incorrect.add(output)
-                if set(gate.inputs) & set(gates.keys()):
-                    for inp in gate.inputs:
-                        if gates[inp].operation == 'AND':
-                            if gates[inp].inputs != ['x00', 'y00']:
-                                incorrect.add(inp)
+
+                # All non-xy inputs to AND gates cannot come from AND gates
+                incorrect.update(i for i in internal_inputs if gates[i].operation == 'AND' and gates[i].inputs != {'x00', 'y00'})
+
             case 'XOR':
-                # Inputs come from other gates
-                if set(gate.inputs) & set(gates.keys()):
-                    if not output.startswith('z'):
-                        incorrect.add(output)
-                # Inputs come from input values
-                elif output.startswith('z') and output != 'z00':
+                # All XOR gates with non-xy inputs output z directly
+                if internal_inputs and not output.startswith('z'):
                     incorrect.add(output)
 
-    assert len(incorrect) == 2 * num_swaps
+                # All XOR gates with xy inputs cannot output z directly (except the LSB z00)
+                elif not internal_inputs and output.startswith('z') and output != 'z00':
+                    incorrect.add(output)
+
+    if len(incorrect) != 2 * num_swaps:
+        raise ValueError(f'needed {2 * num_swaps} incorrect wires ({num_swaps} swaps), found {len(incorrect)}')
     return incorrect
-
-
-def causal_network(output: str, gates: dict[str, Gate]) -> set[Gate]:
-    network: set[Gate] = {gates[output]}
-    inputs: set[str] = set()
-    cur_wires: set[str] = set(gates[output].inputs)
-    while cur_wires:
-        wire = cur_wires.pop()
-        if wire[0] in 'xyz':
-            inputs.add(wire)
-        elif wire in gates:
-            network.add(gates[wire])
-            cur_wires.update(gates[wire].inputs)
-
-    # if int(output.lstrip('z')) != max(int(i.lstrip('xy')) for i in inputs):
-    print(f'{output} is affected by {", ".join(sorted(inputs))}')
-    return network
 
 
 def parse(puzzle_input: str):
@@ -130,8 +114,8 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    wires, gates = data
-    return ','.join(sorted(swapped_wires(wires, gates, 4)))
+    _, gates = data
+    return ','.join(sorted(swapped_wires(gates, 4)))
 
 
 def solve(puzzle_input: str):
