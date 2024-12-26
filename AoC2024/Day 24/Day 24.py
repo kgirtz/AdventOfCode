@@ -12,6 +12,14 @@ class Gate:
         self.operation: str = pieces[1]
         self.output: str = pieces[4]
 
+        self.inputs.sort()
+
+        self.annotated_inputs: list[str] = []
+        self.annotated_output: str = ''
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.inputs) + (self.operation, self.output))
+
     def evaluate(self, input1: bool | None, input2: bool | None) -> bool | None:
         match self.operation:
             case 'AND':
@@ -43,13 +51,57 @@ def propagate(wires: dict[str, bool], gates: dict[str, Gate]) -> None:
                 to_evaluate.remove(wire)
 
 
-def value(bus: str, wires: dict[str, str]) -> int:
-    z_wires: Sequence[str] = sorted((wire for wire in wires if wire.startswith(bus)), reverse=True)
-    return int(''.join(str(int(wires[z])) for z in z_wires), 2)
+def bus_value(bus: str, wires: dict[str, str]) -> int:
+    bits: Sequence[str] = sorted((wire for wire in wires if wire.startswith(bus)), reverse=True)
+    return int(''.join(str(int(wires[bit])) for bit in bits), 2)
 
 
-def swapped_wires(wires: dict[str, bool], gates: dict[str, Gate], num_swaps: int) -> list[str]:
-    return []
+def swapped_wires(wires: dict[str, bool], gates: dict[str, Gate], num_swaps: int) -> set[str]:
+    incorrect: set[str] = set()
+    for output, gate in gates.items():
+        match gate.operation:
+            case 'OR':
+                if output.startswith('z') and output != 'z45':
+                    incorrect.add(output)
+                for inp in gate.inputs:
+                    if gates[inp].operation != 'AND':
+                        incorrect.add(inp)
+            case 'AND':
+                if output.startswith('z'):
+                    incorrect.add(output)
+                if set(gate.inputs) & set(gates.keys()):
+                    for inp in gate.inputs:
+                        if gates[inp].operation == 'AND':
+                            if gates[inp].inputs != ['x00', 'y00']:
+                                incorrect.add(inp)
+            case 'XOR':
+                # Inputs come from other gates
+                if set(gate.inputs) & set(gates.keys()):
+                    if not output.startswith('z'):
+                        incorrect.add(output)
+                # Inputs come from input values
+                elif output.startswith('z') and output != 'z00':
+                    incorrect.add(output)
+
+    assert len(incorrect) == 2 * num_swaps
+    return incorrect
+
+
+def causal_network(output: str, gates: dict[str, Gate]) -> set[Gate]:
+    network: set[Gate] = {gates[output]}
+    inputs: set[str] = set()
+    cur_wires: set[str] = set(gates[output].inputs)
+    while cur_wires:
+        wire = cur_wires.pop()
+        if wire[0] in 'xyz':
+            inputs.add(wire)
+        elif wire in gates:
+            network.add(gates[wire])
+            cur_wires.update(gates[wire].inputs)
+
+    # if int(output.lstrip('z')) != max(int(i.lstrip('xy')) for i in inputs):
+    print(f'{output} is affected by {", ".join(sorted(inputs))}')
+    return network
 
 
 def parse(puzzle_input: str):
@@ -73,13 +125,13 @@ def part1(data):
     """Solve part 1"""
     wires, gates = data
     propagate(wires, gates)
-    return value('z', wires)
+    return bus_value('z', wires)
 
 
 def part2(data):
     """Solve part 2"""
     wires, gates = data
-    return ''.join(sorted(swapped_wires(wires, gates, 2)))  # 2 for test, 4 for input
+    return ','.join(sorted(swapped_wires(wires, gates, 4)))
 
 
 def solve(puzzle_input: str):
@@ -96,7 +148,7 @@ if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = 2024
-    PART2_TEST_ANSWER = 'z00,z01,z02,z05'
+    PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
