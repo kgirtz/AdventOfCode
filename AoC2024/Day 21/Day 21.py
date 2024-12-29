@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+import collections
 
 from space import Space
 from xypair import XYpair
@@ -17,30 +18,27 @@ class Keypad(Space):
     def shortest_paths_to_key(self, start_key: str, finish_key: str) -> list[str]:
         start: XYpair = self.position[start_key]
         finish: XYpair = self.position[finish_key]
-
         diff: XYpair = finish - start
+
+        horizontal_steps: str = ''
         if diff.x > 0:
-            horizontal_direction: str = '>'
+            horizontal_steps = '>' * diff.x
         elif diff.x < 0:
-            horizontal_direction = '<'
-        else:
-            horizontal_direction = ''
+            horizontal_steps = '<' * -diff.x
 
+        vertical_steps: str = ''
         if diff.y > 0:
-            vertical_direction: str = 'v'
+            vertical_steps = 'v' * diff.y
         elif diff.y < 0:
-            vertical_direction = '^'
-        else:
-            vertical_direction = ''
+            vertical_steps = '^' * -diff.y
 
-        horizontal_steps: str = horizontal_direction * abs(diff.x)
-        vertical_steps: str = vertical_direction * abs(diff.y)
-        paths: set[str] = set()
-        if (finish.x, start.y) != self.gap:
-            paths.add(horizontal_steps + vertical_steps)
-        if (start.x, finish.y) != self.gap:
-            paths.add(vertical_steps + horizontal_steps)
-        return list(paths)
+        if not horizontal_steps or not vertical_steps:
+            return [horizontal_steps + vertical_steps]
+        if (finish.x, start.y) == self.gap:
+            return [vertical_steps + horizontal_steps]
+        if (start.x, finish.y) == self.gap:
+            return [horizontal_steps + vertical_steps]
+        return [horizontal_steps + vertical_steps, vertical_steps + horizontal_steps]
 
     def shortest_sequences(self, keys_to_press: str) -> list[str]:
         paths: list[str] = ['']
@@ -55,6 +53,68 @@ class Keypad(Space):
         min_length: int = min(len(path) for path in paths)
         return [path for path in paths if len(path) == min_length]
 
+    def shortest_sequence_fast(self, keys_to_press: dict[str, int]) -> dict[str, int]:
+        sequence: dict[str, int] = collections.defaultdict(int)
+        for sub_seq, num in keys_to_press.items():
+            cur_key: str = 'A'
+            for key in sub_seq:
+                for path in self.shortest_paths_to_key(cur_key, key):
+                    sequence[path + 'A'] += num
+                cur_key = key
+        return sequence
+
+
+class DirectionKeypad(Keypad):
+    def shortest_paths_to_key(self, start_key: str, finish_key: str) -> list[str]:
+        if start_key == finish_key:
+            return ['']
+
+        if start_key == 'A':
+            if finish_key == '^':
+                return ['<']
+            elif finish_key == 'v':
+                return ['<v']  # swap?
+            elif finish_key == '<':
+                return ['v<<']
+            elif finish_key == '>':
+                return ['v']
+        elif start_key == '^':
+            if finish_key == 'A':
+                return ['>']
+            elif finish_key == 'v':
+                return ['v']
+            elif finish_key == '<':
+                return ['v<']
+            elif finish_key == '>':
+                return ['v>']  # swap?
+        elif start_key == 'v':
+            if finish_key == 'A':
+                return ['^>']  # swap?
+            elif finish_key == '^':
+                return ['^']
+            elif finish_key == '<':
+                return ['<']
+            elif finish_key == '>':
+                return ['>']
+        elif start_key == '<':
+            if finish_key == 'A':
+                return ['>>^']
+            elif finish_key == '^':
+                return ['>^']
+            elif finish_key == 'v':
+                return ['>']
+            elif finish_key == '>':
+                return ['>>']
+        elif start_key == '>':
+            if finish_key == 'A':
+                return ['^']
+            elif finish_key == '^':
+                return ['<^']  # swap?
+            elif finish_key == 'v':
+                return ['<']
+            elif finish_key == '<':
+                return ['<<']
+
 
 numeric_layout: list[str] = ['789',
                              '456',
@@ -64,32 +124,47 @@ numeric_keypad: Keypad = Keypad(numeric_layout)
 
 direction_layout: list[str] = [' ^A',
                                '<v>']
-direction_keypad: Keypad = Keypad(direction_layout)
+direction_keypad: DirectionKeypad = DirectionKeypad(direction_layout)
 
 
-def len_shortest_sequence(code: str) -> int:
+def len_shortest_sequence(code: str, num_robots: int) -> int:
     # Shortest sequences for code on keypad
     sequences: list[str] = numeric_keypad.shortest_sequences(code)
 
-    # Shortest sequences for above on direction pad
-    new_sequences: list[str] = []
-    for s in sequences:
-        new_sequences.extend(direction_keypad.shortest_sequences(s))
-    min_length: int = min(len(s) for s in new_sequences)
-    sequences = [s for s in new_sequences if len(s) == min_length]
-
-    # Shortest sequences for above on direction pad
-    new_sequences = []
-    for s in sequences:
-        new_sequences.extend(direction_keypad.shortest_sequences(s))
-    min_length = min(len(s) for s in new_sequences)
-    sequences = [s for s in new_sequences if len(s) == min_length]
+    for _ in range(num_robots):
+        # Shortest sequences for above on direction pad
+        new_sequences: list[str] = []
+        for s in sequences:
+            new_sequences.extend(direction_keypad.shortest_sequences(s))
+        min_length: int = min(len(s) for s in new_sequences)
+        sequences = [s for s in new_sequences if len(s) == min_length]
 
     return min(len(s) for s in sequences)
 
 
-def complexity(code: str) -> int:
-    return int(code.rstrip('A')) * len_shortest_sequence(code)
+def len_shortest_sequence_fast(code: str, num_robots: int) -> int:
+    # Shortest sequences for code on keypad
+    sequences: list[str] = numeric_keypad.shortest_sequences(code)
+
+    min_length: int = -1
+    for sequence in sequences:
+        # Build dictionary
+        s_dict: dict[str, int] = collections.defaultdict(int)
+        for s in sequence.replace('A', 'A,').split(',')[:-1]:
+            s_dict[s] += 1
+
+        for _ in range(num_robots):
+            s_dict = direction_keypad.shortest_sequence_fast(s_dict)
+
+        final_length: int = sum(len(k) * v for k, v in s_dict.items())
+        if final_length < min_length or min_length == -1:
+            min_length = final_length
+
+    return min_length
+
+
+def complexity(code: str, num_robots: int) -> int:
+    return int(code.rstrip('A')) * len_shortest_sequence_fast(code, num_robots)
 
 
 def parse(puzzle_input: str):
@@ -99,12 +174,12 @@ def parse(puzzle_input: str):
 
 def part1(data):
     """Solve part 1"""
-    return sum(complexity(code) for code in data)
+    return sum(complexity(code, 2) for code in data)
 
 
 def part2(data):
-    """Solve part 2"""
-    return data
+    """Solve part 2"""  # 395617529305636 is too high
+    return sum(complexity(code, 25) for code in data)
 
 
 def solve(puzzle_input: str):
