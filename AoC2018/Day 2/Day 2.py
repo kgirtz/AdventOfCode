@@ -1,21 +1,49 @@
 import pathlib
 import sys
 import os
+from collections import Counter
+from collections.abc import Collection
+
+
+def has_copies(s: str, copy_count: int) -> bool:
+    return copy_count in Counter(s).values()
+
+
+def checksum(id_list: Collection) -> int:
+    two_copies: int = sum(has_copies(i, 2) for i in id_list)
+    three_copies: int = sum(has_copies(i, 3) for i in id_list)
+    return two_copies * three_copies
+
+
+def single_difference(s1: str, s2: str) -> int | None:
+    assert s1 != s2 and len(s1) == len(s2)
+
+    difference: int = -1
+    for i in range(len(s1)):
+        if s1[i] != s2[i]:
+            if difference != -1:
+                return None
+            difference = i
+    return difference
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.split()
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return checksum(data)
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    for i, s1 in enumerate(data[:-1]):
+        for s2 in data[i + 1:]:
+            diff: int | None = single_difference(s1, s2)
+            if diff is not None:
+                return s1[:diff] + s1[diff + 1:]
 
 
 def solve(puzzle_input: str):
@@ -31,8 +59,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 12
+    PART2_TEST_ANSWER = 'fgij'
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
