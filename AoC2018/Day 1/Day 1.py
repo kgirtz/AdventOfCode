@@ -1,21 +1,29 @@
 import pathlib
 import sys
 import os
+import itertools
+from typing import Iterator
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return [int(line) for line in puzzle_input.split()]
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    return sum(data)
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    changes: Iterator[int] = itertools.cycle(data)
+    frequencies_seen: set[int] = set()
+    freq: int = 0
+    while freq not in frequencies_seen:
+        frequencies_seen.add(freq)
+        freq += next(changes)
+    return freq
 
 
 def solve(puzzle_input: str):
@@ -31,8 +39,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 3
+    PART2_TEST_ANSWER = 2
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
