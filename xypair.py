@@ -1,18 +1,19 @@
 import typing
 import math
 import functools
+import collections.abc
 
 XYtuple: typing.TypeAlias = tuple[int, ...]
 
 
-def accept_tuple(func: typing.Callable) -> typing.Callable:
+def accept_tuple(func: collections.abc.Callable) -> collections.abc.Callable:
     @functools.wraps(func)
     def wrapper(pair_or_tuple: XYtuple, *args, **kwargs):
         return func(XYpair(*pair_or_tuple), *args, **kwargs)
     return wrapper
 
 
-def accept_tuple_method(func: typing.Callable) -> typing.Callable:
+def accept_tuple_method(func: collections.abc.Callable) -> collections.abc.Callable:
     @functools.wraps(func)
     def wrapper(self, pair_or_tuple: XYtuple, *args, **kwargs):
         return func(self, XYpair(*pair_or_tuple), *args, **kwargs)

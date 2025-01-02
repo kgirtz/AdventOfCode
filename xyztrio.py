@@ -1,18 +1,19 @@
 import typing
 import math
 import functools
+import collections.abc
 
 XYZtuple: typing.TypeAlias = tuple[int, ...]
 
 
-def accept_tuple(func: typing.Callable) -> typing.Callable:
+def accept_tuple(func: collections.abc.Callable) -> collections.abc.Callable:
     @functools.wraps(func)
     def wrapper(trio_or_tuple: XYZtuple, *args, **kwargs):
         return func(XYZtrio(*trio_or_tuple), *args, **kwargs)
     return wrapper
 
 
-def accept_tuple_method(func: typing.Callable) -> typing.Callable:
+def accept_tuple_method(func: collections.abc.Callable) -> collections.abc.Callable:
     @functools.wraps(func)
     def wrapper(self, trio_or_tuple: XYZtuple, *args, **kwargs):
         return func(self, XYZtrio(*trio_or_tuple), *args, **kwargs)

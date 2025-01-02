@@ -1,11 +1,15 @@
-import typing
 import collections
 
 import xypair
 
 
 class Space:
-    def __init__(self, space_str: str | typing.Sequence[str], item_types: typing.Iterable[str] = tuple(), *, default: str = '.') -> None:
+    def __init__(self,
+                 space_str: str | collections.abc.Sequence[str],
+                 item_types: collections.abc.Container[str] = tuple(),
+                 *,
+                 default: str = '.') -> None:
+
         if isinstance(space_str, str):
             space_str = space_str.split('\n')
         else:
