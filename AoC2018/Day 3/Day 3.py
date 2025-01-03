@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import os
+import re
 from typing import NamedTuple, Self
 
 
@@ -45,14 +46,8 @@ def parse(puzzle_input: str):
     """Parse input"""
     claims: list[tuple[int, FabricSquare]] = []
     for line in puzzle_input.split('\n'):
-        id_num, _, pos, size = line.split()
-
-        id_num = int(id_num.lstrip('#'))
-        x, y = (int(n) for n in pos.rstrip(':').split(','))
-        width, height = (int(n) for n in size.split('x'))
-
-        claims.append((id_num, FabricSquare(x, y, width, height)))
-
+        id_num, x, y, w, h = (int(m) for m in re.findall(r'\d+', line))
+        claims.append((id_num, FabricSquare(x, y, w, h)))
     return claims
 
 
