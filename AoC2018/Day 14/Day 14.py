@@ -1,21 +1,64 @@
 import pathlib
 import sys
 import os
+from collections.abc import Sequence, MutableSequence
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return int(puzzle_input)
+
+
+def recipe_round(elf1: int, elf2: int, scoreboard: MutableSequence[int]) -> (int, int):
+    recipe1: int = scoreboard[elf1]
+    recipe2: int = scoreboard[elf2]
+    recipe_sum: int = recipe1 + recipe2
+    if recipe_sum > 9:
+        scoreboard.extend((1, recipe_sum % 10))
+    else:
+        scoreboard.append(recipe_sum % 10)
+
+    return (elf1 + recipe1 + 1) % len(scoreboard), (elf2 + recipe2 + 1) % len(scoreboard)
+
+
+def find_at_end_of_scoreboard(seq: Sequence[int], scoreboard: Sequence[int]) -> int:
+    i: int = len(scoreboard) - len(seq)
+    if i < 0:
+        return -1
+
+    if i > 0 and all(a == b for a, b in zip(seq, scoreboard[i - 1:i - 1 + len(seq)])):
+        return i - 1
+
+    if all(a == b for a, b in zip(seq, scoreboard[i:i + len(seq)])):
+        return i
+
+    return -1
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    scoreboard: list[int] = [3, 7]
+    elf1: int = 0
+    elf2: int = 1
+    while len(scoreboard) < data + 10:
+        elf1, elf2 = recipe_round(elf1, elf2, scoreboard)
+
+    return ''.join(str(n) for n in scoreboard[data:data + 10])
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    target: tuple[int, ...] = tuple(int(d) for d in str(data))
+
+    scoreboard: list[int] = [3, 7]
+    elf1: int = 0
+    elf2: int = 1
+    target_location: int = -1
+    while target_location == -1:
+        elf1, elf2 = recipe_round(elf1, elf2, scoreboard)
+        target_location = find_at_end_of_scoreboard(target, scoreboard)
+
+    return target_location
 
 
 def solve(puzzle_input: str):
@@ -31,8 +74,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = '5941429882'
+    PART2_TEST_ANSWER = 2018
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
