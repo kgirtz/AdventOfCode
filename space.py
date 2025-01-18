@@ -16,7 +16,7 @@ class Space:
             space_str = list(space_str)
 
         self.height: int = len(space_str)
-        self.width: int = len(space_str[0])
+        self.width: int = max(len(s) for s in space_str)
         self.items: dict[str, set[xypair.XYpair]] = collections.defaultdict(set)
         self.integer_values: bool = False
         self.default: str = default
