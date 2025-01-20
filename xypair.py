@@ -84,7 +84,7 @@ class XYpair(typing.NamedTuple):
 
     def collinear(self, pts: typing.Iterable[XYtuple]) -> bool:
         pts = list(pts)
-        basis: XYpair = self - XYpair(*pts[0])
+        basis: XYpair = self - pts[0]
         for pt in pts:
             diff: XYpair = self - pt
             if diff.x / basis.x != diff.y / basis.y:
