@@ -164,4 +164,8 @@ class XYpair(typing.NamedTuple):
         return self.distance(ORIGIN)
 
 
+def reading_order(pt: XYtuple) -> tuple[int, ...]:
+    return pt[::-1]
+
+
 ORIGIN: XYpair = XYpair(0, 0)
