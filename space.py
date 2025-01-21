@@ -112,10 +112,12 @@ class Space:
                   nonblockers: collections.abc.Container[str] = tuple()) \
             -> set[xypair.XYpair]:
 
+        targets = frozenset(xypair.XYpair(*target) for target in targets)
+
         results: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] \
             = self.__find_points(start, targets, nonblockers)
 
-        return set(results.keys())
+        return results.keys() & targets
 
     def reachable_in_fewest_steps(self,
                                   start: xypair.XYtuple,
@@ -124,10 +126,12 @@ class Space:
                                   nonblockers: collections.abc.Container[str] = tuple()) \
             -> (set[xypair.XYpair], int):
 
+        targets = frozenset(xypair.XYpair(*target) for target in targets)
+
         results: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] \
             = self.__find_points(start, targets, nonblockers, stop_at_nearest=True)
 
-        return set(results.keys()), (results.popitem()[1][0] if results else -1)
+        return results.keys() & targets, (results.popitem()[1][0] if results else -1)
 
     def shortest_path_lengths(self,
                               start: xypair.XYtuple,
@@ -136,56 +140,59 @@ class Space:
                               nonblockers: collections.abc.Container[str] = tuple()) \
             -> dict[xypair.XYpair, int]:
 
+        targets = frozenset(targets)  # no need for XYpairs since we're not intersecting
+
         results: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] \
             = self.__find_points(start, targets, nonblockers)
 
-        return {k: d for k, (d, _) in results.items()}
+        return {k: d for k, (d, _) in results.items() if k in targets}
 
     def min_paths(self,
                   start: xypair.XYtuple,
                   targets: collections.abc.Iterable[xypair.XYtuple],
                   *,
-                  nonblockers: collections.abc.Container[str] = tuple()) \
-            -> dict[xypair.XYpair, set[tuple[xypair.XYpair, ...]]]:
+                  nonblockers: collections.abc.Container[str] = tuple(),
+                  stop_at_nearest: bool = False) \
+            -> dict[xypair.XYpair, list[tuple[xypair.XYpair, ...]]]:
 
-        targets = set(targets)
-        blockers: set[xypair.XYtuple] = self.blockers(exclude=nonblockers)
+        targets = frozenset(xypair.XYpair(*target) for target in targets)
 
-        paths: dict[xypair.XYtuple, set[tuple[xypair.XYpair, ...]]] = {}
-        edge: dict[xypair.XYtuple, set[tuple[xypair.XYpair, ...]]] = {start: {(xypair.XYpair(*start),)}}
-        while edge and not (paths.keys() | edge.keys()) >= targets:
-            paths.update(edge)
-            new_edge: dict[xypair.XYtuple, set[tuple[xypair.XYpair, ...]]] = collections.defaultdict(set)
-            for cur_pt, cur_paths in edge.items():
-                for n in self.neighbors(cur_pt) - blockers - paths.keys():
-                    new_edge[n].update(p + (xypair.XYpair(*n),) for p in cur_paths)
-            edge = new_edge
+        results: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] \
+            = self.__find_points(start, targets, nonblockers, stop_at_nearest=stop_at_nearest)
 
-        return {xypair.XYpair(x, y): p for (x, y), p in (paths | edge).items() if (x, y) in targets}
+        def build_paths(s: xypair.XYtuple, t: xypair.XYpair) -> list[tuple[xypair.XYpair, ...]]:
+            if t == s:
+                return [(t,)]
+
+            path_set: list[tuple[xypair.XYpair, ...]] = []
+            for predecessor in results[t][1]:
+                path_set.extend(p + (t,) for p in build_paths(s, predecessor))
+            return path_set
+
+        return {target: build_paths(start, target) for target in results.keys() & targets}
 
     def __find_points(self,
                       start: xypair.XYtuple,
-                      targets: collections.abc.Iterable[xypair.XYtuple],
+                      targets: collections.abc.Set[xypair.XYtuple],
                       nonblockers: collections.abc.Container[str] = tuple(),
                       stop_at_nearest: bool = False) \
             -> dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]]:
 
-        targets = frozenset(targets)
         blockers: set[xypair.XYtuple] = self.blockers(exclude=nonblockers)
 
-        found: dict[xypair.XYtuple, tuple[int, list[xypair.XYpair]]] = {}
-        edge: dict[xypair.XYtuple, tuple[int, list[xypair.XYpair]]] = {start: (0, [])}
+        found: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] = {}
+        edge: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] = {xypair.XYpair(*start): (0, [])}
+
         found.update(edge)
         while edge and not found.keys() >= targets and not (stop_at_nearest and found.keys() & targets):
-            new_edge: dict[xypair.XYtuple, tuple[int, list[xypair.XYpair]]] = {}
+            new_edge: dict[xypair.XYpair, tuple[int, list[xypair.XYpair]]] = {}
             for cur_pt, (steps, path_prev) in edge.items():
                 for n in self.neighbors(cur_pt) - blockers - found.keys():
                     if n in new_edge:
-                        assert new_edge[n][0] == steps + 1
                         new_edge[n][1].append(xypair.XYpair(*cur_pt))
                     else:
-                        new_edge[n] = (steps + 1, [xypair.XYpair(*cur_pt)])
+                        new_edge[xypair.XYpair(*n)] = (steps + 1, [xypair.XYpair(*cur_pt)])
             edge = new_edge
             found.update(edge)
 
-        return {xypair.XYpair(x, y): (d, p) for (x, y), (d, p) in found.items() if (x, y) in targets}
+        return found
