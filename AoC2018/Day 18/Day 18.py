@@ -2,20 +2,80 @@ import pathlib
 import sys
 import os
 
+from xypair import XYpair
+from space import Space
+
+
+class Forest(Space):
+    def __init__(self, in_put) -> None:
+        super().__init__(in_put)
+
+        self.trees: set[XYpair] = self.items['|']
+        self.lumberyards: set[XYpair] = self.items['#']
+
+    def minute(self) -> None:
+        new_trees: set[XYpair] = self.trees.copy()
+        new_lumberyards: set[XYpair] = self.lumberyards.copy()
+
+        open_acres: set[XYpair] = set()
+        for tree in self.trees:
+            open_acres.update(self.neighbors(tree, include_corners=True))
+        open_acres -= self.trees | self.lumberyards
+
+        for acre in open_acres:
+            if len(acre.neighbors(include_corners=True) & self.trees) >= 3:
+                new_trees.add(acre)
+
+        for acre in self.trees:
+            if len(acre.neighbors(include_corners=True) & self.lumberyards) >= 3:
+                new_lumberyards.add(acre)
+                new_trees.remove(acre)
+
+        for acre in self.lumberyards:
+            adjacent_acres: set[XYpair] = acre.neighbors(include_corners=True)
+            if not (len(adjacent_acres & self.lumberyards) >= 1 and len(adjacent_acres & self.trees) >= 1):
+                new_lumberyards.remove(acre)
+
+        self.trees = self.items['|'] = new_trees
+        self.lumberyards = self.items['#'] = new_lumberyards
+
+    def resource_value(self) -> int:
+        return len(self.trees) * len(self.lumberyards)
+
+    def state(self) -> (frozenset[XYpair], frozenset[XYpair]):
+        return frozenset(self.trees), frozenset(self.lumberyards)
+
+    def minutes_pass(self, num_minutes: int) -> None:
+        seen: dict[tuple[frozenset[XYpair], frozenset[XYpair]], int] = {}
+        for m in range(num_minutes):
+            seen[self.state()] = m
+
+            self.minute()
+
+            if self.state() in seen:
+                startup: int = seen[self.state()]
+                cycle_length: int = m - startup + 1
+                reduced_minutes: int = (num_minutes - startup) % cycle_length
+                return self.minutes_pass(reduced_minutes)
+
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    forest: Forest = Forest(data)
+    forest.minutes_pass(10)
+    return forest.resource_value()
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    forest: Forest = Forest(data)
+    forest.minutes_pass(1000000000)
+    return forest.resource_value()
 
 
 def solve(puzzle_input: str):
@@ -31,7 +91,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 1147
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
