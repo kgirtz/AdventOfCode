@@ -1,16 +1,73 @@
 import pathlib
 import sys
 import os
+import functools
+import dataclasses
+
+from xypair import XYpair, ORIGIN
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    depth_str, target_str = puzzle_input.split('\n')
+    depth: int = int(depth_str.split()[1])
+    target: XYpair = XYpair(*(int(n) for n in target_str.split()[1].split(',')))
+    return depth, target
+
+
+ROCKY: int = 0
+WET: int = 1
+NARROW: int = 2
+
+ALLOWED_TOOLS: dict[int, frozenset[str]] = {ROCKY: frozenset(('climbing gear', 'torch')),
+                                            WET: frozenset(('climbing gear', 'neither')),
+                                            NARROW: frozenset(('neither', 'torch'))}
+
+
+@dataclasses.dataclass
+class Cave:
+    depth: int
+    target: XYpair
+
+    def __hash__(self) -> int:
+        return hash((self.depth, self.target))
+
+    @staticmethod
+    def neighbors(region: XYpair) -> set[XYpair]:
+        return {n for n in region.neighbors() if n.x >= 0 and n.y >= 0}
+
+    def allowed_tools(self, region: XYpair) -> frozenset[str]:
+        return ALLOWED_TOOLS[self.region_type(region)]
+
+    @functools.cache
+    def geologic_index(self, region: XYpair) -> int:
+        if region == ORIGIN or region == self.target:
+            return 0
+        if region.y == 0:
+            return region.x * 16807
+        if region.x == 0:
+            return region.y * 48271
+        return self.erosion_level(region.left()) * self.erosion_level(region.up())
+
+    @functools.cache
+    def erosion_level(self, region: XYpair) -> int:
+        return (self.geologic_index(region) + self.depth) % 20183
+
+    @functools.cache
+    def region_type(self, region: XYpair) -> int:
+        return self.erosion_level(region) % 3
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    depth, target = data
+
+    cave: Cave = Cave(depth, target)
+    risk: int = 0
+    for y in range(target.y + 1):
+        for x in range(target.x + 1):
+            risk += cave.region_type(XYpair(x, y))
+    return risk
 
 
 def part2(data):
@@ -31,8 +88,8 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 114
+    PART2_TEST_ANSWER = 45
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
