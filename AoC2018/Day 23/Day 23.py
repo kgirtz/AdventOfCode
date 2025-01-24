@@ -1,16 +1,35 @@
 import pathlib
 import sys
 import os
+import dataclasses
+
+from xyztrio import XYZtrio
+
+
+@dataclasses.dataclass
+class Nanobot:
+    position: XYZtrio
+    signal_radius: int
+
+    def in_range(self, pt: XYZtrio) -> bool:
+        return self.position.manhattan_distance(pt) <= self.signal_radius
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    nanobots: list[Nanobot] = []
+    for line in puzzle_input.split('\n'):
+        pos_str, r_str = line.split('>, ')
+        pos: XYZtrio = XYZtrio(*(int(n) for n in pos_str.lstrip('pos=<').split(',')))
+        r: int = int(r_str.lstrip('r='))
+        nanobots.append(Nanobot(pos, r))
+    return nanobots
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    strongest: Nanobot = max(data, key=lambda n: n.signal_radius)
+    return sum(strongest.in_range(n.position) for n in data)
 
 
 def part2(data):
@@ -31,7 +50,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 7
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
