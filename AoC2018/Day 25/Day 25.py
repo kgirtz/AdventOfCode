@@ -1,21 +1,46 @@
 import pathlib
 import sys
 import os
+from typing import TypeAlias
+
+HyperPoint: TypeAlias = tuple[int, ...]
 
 
 def parse(puzzle_input: str):
     """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+    return [tuple(int(n) for n in line.split(',')) for line in puzzle_input.split('\n')]
+
+
+def distance(pt1: HyperPoint, pt2: HyperPoint) -> int:
+    return sum(abs(pt1[i] - pt2[i]) for i in range(len(pt1)))
 
 
 def part1(data):
     """Solve part 1"""
-    return data
+    num_constellations: int = 0
+    while data:
+        constellation: set[HyperPoint] = {data.pop()}
+        while True:
+            new_additions: set[HyperPoint] = set()
+            for pt in data.copy():
+                for c in constellation:
+                    if distance(pt, c) <= 3:
+                        new_additions.add(pt)
+                        data.remove(pt)
+                        break
+
+            constellation.update(new_additions)
+            if not new_additions:
+                break
+
+        num_constellations += 1
+
+    return num_constellations
 
 
 def part2(data):
     """Solve part 2"""
-    return data
+    return None
 
 
 def solve(puzzle_input: str):
@@ -31,7 +56,7 @@ def solve(puzzle_input: str):
 if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
-    PART1_TEST_ANSWER = None
+    PART1_TEST_ANSWER = 8
     PART2_TEST_ANSWER = None
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
