@@ -17,22 +17,23 @@ def distance(pt1: HyperPoint, pt2: HyperPoint) -> int:
 
 def part1(data):
     """Solve part 1"""
+    points = set(data)
     num_constellations: int = 0
-    while data:
-        constellation: set[HyperPoint] = {data.pop()}
+    while points:
+        constellation: set[HyperPoint] = {points.pop()}
         while True:
             new_additions: set[HyperPoint] = set()
-            for pt in data.copy():
+            for pt in points - constellation:
                 for c in constellation:
                     if distance(pt, c) <= 3:
                         new_additions.add(pt)
-                        data.remove(pt)
                         break
 
             constellation.update(new_additions)
             if not new_additions:
                 break
 
+        points.difference_update(constellation)
         num_constellations += 1
 
     return num_constellations
