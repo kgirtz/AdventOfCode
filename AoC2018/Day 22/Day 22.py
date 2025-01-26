@@ -3,6 +3,7 @@ import sys
 import os
 import functools
 import dataclasses
+import heapq
 
 from xypair import XYpair, ORIGIN
 
@@ -19,9 +20,11 @@ ROCKY: int = 0
 WET: int = 1
 NARROW: int = 2
 
-ALLOWED_TOOLS: dict[int, frozenset[str]] = {ROCKY: frozenset(('climbing gear', 'torch')),
-                                            WET: frozenset(('climbing gear', 'neither')),
-                                            NARROW: frozenset(('neither', 'torch'))}
+TOOLS: tuple[str, ...] = ('climbing gear', 'torch', 'none')
+
+ALLOWED_TOOLS: dict[int, set[str]] = {ROCKY: {'climbing gear', 'torch'},
+                                      WET: {'climbing gear', 'none'},
+                                      NARROW: {'none', 'torch'}}
 
 
 @dataclasses.dataclass
@@ -36,10 +39,12 @@ class Cave:
     def neighbors(region: XYpair) -> set[XYpair]:
         return {n for n in region.neighbors() if n.x >= 0 and n.y >= 0}
 
-    def allowed_tools(self, region: XYpair) -> frozenset[str]:
+    def allowed_tools(self, region: XYpair) -> set[str]:
         return ALLOWED_TOOLS[self.region_type(region)]
 
-    @functools.cache
+    def common_tools(self, r1: XYpair, r2: XYpair) -> set[str]:
+        return self.allowed_tools(r1) & self.allowed_tools(r2)
+
     def geologic_index(self, region: XYpair) -> int:
         if region == ORIGIN or region == self.target:
             return 0
@@ -53,15 +58,41 @@ class Cave:
     def erosion_level(self, region: XYpair) -> int:
         return (self.geologic_index(region) + self.depth) % 20183
 
-    @functools.cache
     def region_type(self, region: XYpair) -> int:
         return self.erosion_level(region) % 3
+
+    def fastest_time_to_target(self) -> int:
+        other_tool: str = (self.allowed_tools(ORIGIN) - {'torch'}).pop()
+        seen: dict[XYpair, dict[str, int]] = {ORIGIN: {'torch': 0, other_tool: 7}}
+        to_check: list[tuple[int, int, XYpair]] = [(0, self.target.manhattan_distance(ORIGIN), ORIGIN)]
+
+        while to_check:
+            _, _, cur_pt = heapq.heappop(to_check)
+            assert max(seen[cur_pt].values()) <= min(seen[cur_pt].values()) + 7
+            times: dict[str, int] = seen[cur_pt]
+            for n in self.neighbors(cur_pt):
+                # Feels hacky, but works for this input
+                if n.x > 50:
+                    continue
+
+                distance_to_origin: int = n.manhattan_distance(ORIGIN)
+                distance_to_target: int = n.manhattan_distance(self.target)
+                if n not in seen:
+                    seen[n] = {}
+                for tool in self.allowed_tools(n):
+                    m: int = (times[tool] + 1) if tool in times else (times[self.common_tools(n, cur_pt).pop()] + 7 + 1)
+                    if tool not in seen[n] or m < seen[n][tool]:
+                        seen[n][tool] = m
+                        if n != self.target and (self.target not in seen or m + distance_to_target < seen[self.target]['torch']):
+                            if (distance_to_origin, distance_to_target, n) not in to_check:
+                                heapq.heappush(to_check, (distance_to_origin, distance_to_target, n))
+
+        return seen[self.target]['torch']
 
 
 def part1(data):
     """Solve part 1"""
     depth, target = data
-
     cave: Cave = Cave(depth, target)
     risk: int = 0
     for y in range(target.y + 1):
@@ -72,7 +103,8 @@ def part1(data):
 
 def part2(data):
     """Solve part 2"""
-    return data
+    depth, target = data
+    return Cave(depth, target).fastest_time_to_target()
 
 
 def solve(puzzle_input: str):
