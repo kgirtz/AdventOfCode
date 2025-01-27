@@ -3,45 +3,56 @@ import sys
 import os
 import functools
 
+from xypair import XYpair
+
 
 def parse(puzzle_input: str):
     """Parse input"""
     return int(puzzle_input)
 
 
-def power_level(x: int, y: int, grid_serial_number: int) -> int:
-    rack_id: int = x + 10
-    level: int = (rack_id * y + grid_serial_number) * rack_id
+def power_level(pt: XYpair, grid_serial_number: int) -> int:
+    rack_id: int = pt.x + 10
+    level: int = (rack_id * pt.y + grid_serial_number) * rack_id
     return (level // 100) % 10 - 5
 
 
 @functools.cache
-def total_power(x: int, y: int, square_size: int, grid_serial_number: int) -> int:
-    if square_size == 1:
-        return power_level(x, y, grid_serial_number)
+def total_power(top_left: XYpair, bottom_right: XYpair, grid_serial_number: int) -> int:
+    if bottom_right.x < top_left.x or bottom_right.y < top_left.y:
+        return 0
 
-    total: int = total_power(x, y, square_size - 1, grid_serial_number)
+    if top_left == bottom_right:
+        return power_level(top_left, grid_serial_number)
 
-    # Don't repeat bottom right corner
-    bottom_row_y: int = y + square_size - 1
-    for bottom_row_x in range(x, x + square_size):
-        total += total_power(bottom_row_x, bottom_row_y, 1, grid_serial_number)
+    if top_left == (1, 1):
+        return power_level(bottom_right, grid_serial_number) \
+                + total_power(top_left, bottom_right.left(), grid_serial_number) \
+                + total_power(top_left, bottom_right.up(), grid_serial_number) \
+                - total_power(top_left, bottom_right.up_left(), grid_serial_number)
 
-    right_side_x: int = x + square_size - 1
-    for right_side_y in range(y, y + square_size - 1):
-        total += total_power(right_side_x, right_side_y, 1, grid_serial_number)
+    return total_power(XYpair(1, 1), bottom_right, grid_serial_number) \
+               + total_power(XYpair(1, 1), top_left.up_left(), grid_serial_number) \
+               - total_power(XYpair(1, 1), XYpair(bottom_right.x, top_left.y - 1), grid_serial_number) \
+               - total_power(XYpair(1, 1), XYpair(top_left.x - 1, bottom_right.y), grid_serial_number)
 
-    return total
+
+def prep_cache(max_size: int, grid_serial_number: int) -> None:
+    for y in range(1, max_size + 1):
+        for x in range(1, max_size + 1):
+            total_power(XYpair(1, 1), XYpair(x, y), grid_serial_number)
 
 
 def part1(data):
     """Solve part 1"""
+    prep_cache(300, data)
+
     max_power: int = 0
     max_power_cell: tuple[int, int] = (0, 0)
     size: int = 3
     for y in range(1, 302 - size):
         for x in range(1, 302 - size):
-            power: int = total_power(x, y, size, data)
+            power: int = total_power(XYpair(x, y), XYpair(x + size - 1, y + size - 1), data)
             if power > max_power:
                 max_power = power
                 max_power_cell = (x, y)
@@ -56,7 +67,7 @@ def part2(data):
     for size in range(1, 301):
         for y in range(1, 302 - size):
             for x in range(1, 302 - size):
-                power: int = total_power(x, y, size, data)
+                power: int = total_power(XYpair(x, y), XYpair(x + size - 1, y + size - 1), data)
                 if power > max_power:
                     max_power = power
                     max_power_cell = (x, y)
@@ -78,7 +89,7 @@ if __name__ == '__main__':
     DIR: str = f'{os.path.dirname(sys.argv[0])}/'
 
     PART1_TEST_ANSWER = (21, 61)
-    PART2_TEST_ANSWER = None#(232, 251, 12)
+    PART2_TEST_ANSWER = (232, 251, 12)
 
     file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
     if file.exists() and PART1_TEST_ANSWER is not None:
