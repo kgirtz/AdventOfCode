@@ -54,7 +54,6 @@ def part2(data):
     max_power_cell: tuple[int, int] = (0, 0)
     max_power_size: int = 0
     for size in range(1, 301):
-        print(size)
         for y in range(1, 302 - size):
             for x in range(1, 302 - size):
                 power: int = total_power(x, y, size, data)
@@ -70,7 +69,7 @@ def solve(puzzle_input: str):
     data = parse(puzzle_input)
     solution1 = part1(data)
     data = parse(puzzle_input)
-    solution2 = None#part2(data)
+    solution2 = part2(data)
 
     return solution1, solution2
 
