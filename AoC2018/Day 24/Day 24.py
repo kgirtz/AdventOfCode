@@ -32,7 +32,7 @@ class ArmyGroup:
         self.starting_attack: int = self.attack
 
     def __lt__(self, other: Self) -> bool:
-        return (self.effective_power(), self.initiative) > (other.effective_power(), other.initiative)
+        return (self.effective_power(), self.initiative) < (other.effective_power(), other.initiative)
 
     def reset(self) -> None:
         self.units = self.starting_units
@@ -59,7 +59,7 @@ class ArmyGroup:
         if weak:
             enemies = weak
 
-        self.target = min(enemies)
+        self.target = max(enemies)
         self.target.is_targeted = True
 
     def attack_target(self) -> None:
@@ -81,9 +81,9 @@ class ArmyGroup:
 
 def fight(immune_system_army: Iterable[ArmyGroup], infection_army: Iterable[ArmyGroup]) -> bool:
     # Target selection phase
-    for group in sorted(immune_system_army):
+    for group in sorted(immune_system_army, reverse=True):
         group.select_target(infection_army)
-    for group in sorted(infection_army):
+    for group in sorted(infection_army, reverse=True):
         group.select_target(immune_system_army)
 
     immune_units: int = sum(group.units for group in immune_system_army)
