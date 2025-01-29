@@ -19,11 +19,12 @@ def explore(regex: str) -> (dict[int, int], dict[int, int]):
     rooms[0] = 1
 
     cur_idx: int = 0
-    loop_count = 0
+    longest: int = 0
     while True:
         # Search for first open paren
         open_paren_idx: int = regex.find('(', cur_idx)
 
+        longest += len(regex[cur_idx:]) if open_paren_idx == -1 else (open_paren_idx - cur_idx)
         # Update doors and rooms
         doors_traversed: int = (len(regex) if open_paren_idx == -1 else open_paren_idx) - cur_idx
         if doors_traversed:
@@ -35,8 +36,6 @@ def explore(regex: str) -> (dict[int, int], dict[int, int]):
 
         # Return if regex is exhausted
         if open_paren_idx == -1:
-            if loop_count > 1:
-                print(loop_count, regex)
             return rooms, doors_so_far
 
         # Skip open paren
@@ -65,8 +64,10 @@ def explore(regex: str) -> (dict[int, int], dict[int, int]):
         # Path splits into multiple options
         if all(options):
             new_paths: dict[int, int] = collections.defaultdict(int)
+            max_path = 0
             for option in options:
                 opt_rooms, opt_doors = explore(option)
+                max_path = max(max_path, max(opt_rooms.keys()))
 
                 # Update doors and rooms
                 for path_len, num_paths in doors_so_far.items():
@@ -77,6 +78,7 @@ def explore(regex: str) -> (dict[int, int], dict[int, int]):
                     for d, d_paths in opt_doors.items():
                         new_paths[path_len + d] += num_paths * d_paths
             doors_so_far = new_paths
+            longest += max_path
 
         # Path takes detours
         else:
@@ -90,8 +92,6 @@ def explore(regex: str) -> (dict[int, int], dict[int, int]):
                     for path_len, num_paths in doors_so_far.items():
                         for d, num_rooms in detour_rooms.items():
                             rooms[path_len + d] += num_paths * num_rooms
-
-        loop_count += 1
 
 
 def part1(data):
