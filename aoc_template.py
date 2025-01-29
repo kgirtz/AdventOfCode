@@ -1,60 +1,101 @@
-import pathlib
-import sys
-import os
+
+PART1_TEST_ANSWER = None
+PART2_TEST_ANSWER = None
 
 
 def parse(puzzle_input: str):
-    """Parse input"""
     return [line for line in puzzle_input.split('\n')]
 
 
 def part1(data):
-    """Solve part 1"""
-    return data
+    return None
 
 
 def part2(data):
-    """Solve part 2"""
-    return data
+    return None
 
 
-def solve(puzzle_input: str):
-    """Solve the puzzle for the given input"""
-    data = parse(puzzle_input)
-    solution1 = part1(data)
-    data = parse(puzzle_input)
-    solution2 = part2(data)
+# ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
 
-    return solution1, solution2
+
+import pathlib
+
+
+def get_puzzle_input(file: pathlib.Path) -> str:
+    if not file.exists():
+        return ''
+    return file.read_text().strip('\n').replace('\t', ' ' * 4)
+
+
+def execute(func, puzzle_input: str) -> (..., int):
+    import time
+
+    start: int = time.perf_counter_ns()
+    result = func(parse(puzzle_input))
+    execution_time_us: int = (time.perf_counter_ns() - start) // 1000
+    return result, execution_time_us
+
+
+def timestamp(execution_time_us: int) -> str:
+    stamp: str = f'{round(execution_time_us / 1000000, 3)} s'
+    if execution_time_us < 1000000:
+        stamp = f'{round(execution_time_us / 1000, 3)} ms'
+    return f'\t[{stamp}]'
+
+
+def test(part_num: int, directory: str) -> None:
+    if part_num == 1:
+        func = part1
+        answer = PART1_TEST_ANSWER
+    else:
+        func = part2
+        answer = PART2_TEST_ANSWER
+
+    prefix: str = f'PART {part_num} TEST: '
+    if answer is None:
+        print(prefix + 'skipped')
+        return
+
+    file: pathlib.Path = pathlib.Path(directory, f'part{part_num}_test.txt')
+    if not file.exists():
+        file = pathlib.Path(directory, 'test.txt')
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    result = 'PASS' if result == answer else 'FAIL'
+    print(prefix + result + timestamp(duration))
+
+
+def solve(part_num: int, directory: str) -> None:
+    func = part1 if part_num == 1 else part2
+    prefix: str = f'PART {part_num}: '
+
+    file: pathlib.Path = pathlib.Path(directory, 'input.txt')
+    if not file.exists():
+        # Download file?
+        ...
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    suffix: str = '' if result is None else timestamp(duration)
+    print(prefix + str(result) + suffix)
 
 
 if __name__ == '__main__':
-    DIR: str = f'{os.path.dirname(sys.argv[0])}/'
+    import os
 
-    PART1_TEST_ANSWER = None
-    PART2_TEST_ANSWER = None
+    working_directory: str = os.path.dirname(__file__)
 
-    file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
-    if file.exists() and PART1_TEST_ANSWER is not None:
-        puzzle_input: str = file.read_text().strip()
-        assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
-
-    file = pathlib.Path(DIR + 'part2_test.txt')
-    if file.exists() and PART2_TEST_ANSWER is not None:
-        puzzle_input = file.read_text().strip()
-        assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
-
-    file = pathlib.Path(DIR + 'test.txt')
-    if file.exists():
-        puzzle_input = file.read_text().strip()
-        if PART1_TEST_ANSWER is not None:
-            assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
-        if PART2_TEST_ANSWER is not None:
-            assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
-
-    for infile in ('input.txt',):
-        print(f'{infile}:')
-        puzzle_input = pathlib.Path(DIR + infile).read_text().strip()
-        solutions = solve(puzzle_input)
-        print('\n'.join(str(solution) for solution in solutions))
-        print()
+    test(1, working_directory)
+    test(2, working_directory)
+    print()
+    solve(1, working_directory)
+    solve(2, working_directory)
