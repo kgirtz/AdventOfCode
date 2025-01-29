@@ -1,174 +1,190 @@
-import pathlib
-import sys
-import os
+import collections
 
-from xypair import XYpair, ORIGIN
+PART1_TEST_ANSWER = 23
+PART2_TEST_ANSWER = None
 
 
 def parse(puzzle_input: str):
-    """Parse input"""
-    return puzzle_input.strip().strip('^$')
+    return puzzle_input.strip(' ^$')
 
 
-rooms: dict[XYpair, int] = {}
+def explore(regex: str) -> (dict[int, int], dict[int, int]):
+    # k: number of doors on path
+    # v: numbers of paths of length k
+    doors_so_far: dict[int, int] = {0: 1}
 
+    # k: number of doors to pass through
+    # v: number of rooms reachable at distance k
+    rooms: dict[int, int] = collections.defaultdict(int)
+    rooms[0] = 1
 
-def update_room(room: XYpair, doors: int) -> None:
-    if room not in rooms or doors < rooms[room]:
-        rooms[room] = doors
-
-
-def move(cur_pos: XYpair, direction: str) -> XYpair:
-    match direction:
-        case 'N':
-            return cur_pos.up(2)
-        case 'S':
-            return cur_pos.down(2)
-        case 'E':
-            return cur_pos.right(2)
-        case 'W':
-            return cur_pos.left(2)
-
-
-def longest_match(regex: str, start: XYpair = ORIGIN, doors_so_far: int = 0) -> None:
-    cur_room: XYpair = start
-    cur_pos: int = doors_so_far
+    cur_idx: int = 0
+    loop_count = 0
     while True:
         # Search for first open paren
-        i: int = cur_pos
-        if i == len(regex):
-            return
+        open_paren_idx: int = regex.find('(', cur_idx)
 
-        while regex[i] != '(':
-            update_room(cur_room, i)
-            cur_room = move(cur_room, regex[i])
-            i += 1
-            if i == len(regex):
-                return
+        # Update doors and rooms
+        doors_traversed: int = (len(regex) if open_paren_idx == -1 else open_paren_idx) - cur_idx
+        if doors_traversed:
+            for path_len, num_paths in doors_so_far.items():
+                for d in range(1, doors_traversed + 1):
+                    rooms[path_len + d] += num_paths
 
-        # Skip open paren
-        cur_pos = i + 1
+            doors_so_far = {path_len + doors_traversed: num_paths for path_len, num_paths in doors_so_far.items()}
 
-        # Find matching close paren and vertical bars
-        i = cur_pos
-        num_open: int = 0
-        bars: list[int] = []
-        while num_open > 0 or regex[i] != ')':
-            if regex[i] == '(':
-                num_open += 1
-            elif regex[i] == ')':
-                num_open -= 1
-            elif regex[i] == '|' and num_open == 0:
-                bars.append(i)
-            i += 1
-
-        # Split options
-        start_of_options: int = cur_pos
-        options: list[str] = []
-        for bar in bars:
-            options.append(regex[cur_pos:bar])
-            cur_pos = bar + 1
-        options.append(regex[cur_pos:i])
-
-        # Calculate longest option, unless options are detours
-        for option in options:
-            if option:
-                longest_match(option, cur_room, start_of_options)
-
-        # Skip close paren
-        cur_pos = i + 1
-
-
-"""def longest_match(regex: str) -> int:
-    cur_pos: int = 0
-    longest: int = 0
-    while True:
-        # Search for first open paren
-        i: int = regex.find('(', cur_pos)
-        if i == -1:
-            return longest + len(regex[cur_pos:])
-
-        # Add fixed string to length
-        longest += i - cur_pos
+        # Return if regex is exhausted
+        if open_paren_idx == -1:
+            if loop_count > 1:
+                print(loop_count, regex)
+            return rooms, doors_so_far
 
         # Skip open paren
-        cur_pos = i + 1
+        cur_idx = open_paren_idx + 1
 
-        # Find matching close paren and vertical bars
-        i = cur_pos
+        # Find matching close paren and split options
+        i: int = cur_idx
         num_open: int = 0
-        bars: list[int] = []
-        while num_open > 0 or regex[i] != ')':
-            if regex[i] == '(':
-                num_open += 1
-            elif regex[i] == ')':
-                num_open -= 1
-            elif regex[i] == '|' and num_open == 0:
-                bars.append(i)
-            i += 1
-
-        # Split options
         options: list[str] = []
-        for bar in bars:
-            options.append(regex[cur_pos:bar])
-            cur_pos = bar + 1
-        options.append(regex[cur_pos:i])
-
-        # Calculate longest option, unless options are detours
-        if all(options):  # TODO: could miss longest path at end of a detour
-            longest += max(longest_match(option) for option in options)
+        while num_open > 0 or regex[i] != ')':
+            match regex[i]:
+                case '(':
+                    num_open += 1
+                case ')':
+                    num_open -= 1
+                case '|':
+                    if num_open == 0:
+                        options.append(regex[cur_idx:i])
+                        cur_idx = i + 1
+            i += 1
+        options.append(regex[cur_idx:i])
 
         # Skip close paren
-        cur_pos = i + 1"""
+        cur_idx = i + 1
+
+        # Path splits into multiple options
+        if all(options):
+            new_paths: dict[int, int] = collections.defaultdict(int)
+            for option in options:
+                opt_rooms, opt_doors = explore(option)
+
+                # Update doors and rooms
+                for path_len, num_paths in doors_so_far.items():
+                    for d, num_rooms in opt_rooms.items():
+                        rooms[path_len + d] += num_paths * num_rooms
+
+                for path_len, num_paths in doors_so_far.items():
+                    for d, d_paths in opt_doors.items():
+                        new_paths[path_len + d] += num_paths * d_paths
+            doors_so_far = new_paths
+
+        # Path takes detours
+        else:
+            for detour in options:
+                if detour:
+                    assert '(' not in detour and '|' not in detour and ')' not in detour
+                    assert len(detour) % 2 == 0
+                    detour_rooms, _ = explore(detour[:len(detour) // 2])
+
+                    # Update rooms only
+                    for path_len, num_paths in doors_so_far.items():
+                        for d, num_rooms in detour_rooms.items():
+                            rooms[path_len + d] += num_paths * num_rooms
+
+        loop_count += 1
 
 
 def part1(data):
-    """Solve part 1"""
-    return longest_match(data)
+    rooms, _ = explore(data)
+    return max(rooms.keys())
 
 
-def part2(data):
-    """Solve part 2"""
-    return data
+def part2(data):  # 10230 is too high
+    rooms, _ = explore(data)
+    return sum(d for r, d in rooms.items() if r >= 1000)
 
 
-def solve(puzzle_input: str):
-    """Solve the puzzle for the given input"""
-    data = parse(puzzle_input)
-    solution1 = part1(data)
-    data = parse(puzzle_input)
-    solution2 = part2(data)
+# ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
 
-    return solution1, solution2
+
+import pathlib
+
+
+def get_puzzle_input(file: pathlib.Path) -> str:
+    if not file.exists():
+        return ''
+    return file.read_text().strip('\n').replace('\t', ' ' * 4)
+
+
+def execute(func, puzzle_input: str) -> (..., int):
+    import time
+
+    start: int = time.perf_counter_ns()
+    result = func(parse(puzzle_input))
+    execution_time_us: int = (time.perf_counter_ns() - start) // 1000
+    return result, execution_time_us
+
+
+def timestamp(execution_time_us: int) -> str:
+    stamp: str = f'{round(execution_time_us / 1000000, 3)} s'
+    if execution_time_us < 1000000:
+        stamp = f'{round(execution_time_us / 1000, 3)} ms'
+    return f'\t[{stamp}]'
+
+
+def test(part_num: int, directory: str) -> None:
+    if part_num == 1:
+        func = part1
+        answer = PART1_TEST_ANSWER
+    else:
+        func = part2
+        answer = PART2_TEST_ANSWER
+
+    prefix: str = f'PART {part_num} TEST: '
+    if answer is None:
+        print(prefix + 'skipped')
+        return
+
+    file: pathlib.Path = pathlib.Path(directory, f'part{part_num}_test.txt')
+    if not file.exists():
+        file = pathlib.Path(directory, 'test.txt')
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    result = 'PASS' if result == answer else 'FAIL'
+    print(prefix + result + timestamp(duration))
+
+
+def solve(part_num: int, directory: str) -> None:
+    func = part1 if part_num == 1 else part2
+    prefix: str = f'PART {part_num}: '
+
+    file: pathlib.Path = pathlib.Path(directory, 'input.txt')
+    if not file.exists():
+        # Download file?
+        ...
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    suffix: str = '' if result is None else timestamp(duration)
+    print(prefix + str(result) + suffix)
 
 
 if __name__ == '__main__':
-    DIR: str = f'{os.path.dirname(sys.argv[0])}/'
+    import os
 
-    PART1_TEST_ANSWER = 18
-    PART2_TEST_ANSWER = None
+    working_directory: str = os.path.dirname(__file__)
 
-    file: pathlib.Path = pathlib.Path(DIR + 'part1_test.txt')
-    if file.exists() and PART1_TEST_ANSWER is not None:
-        puzzle_input: str = file.read_text().strip()
-        assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
-
-    file = pathlib.Path(DIR + 'part2_test.txt')
-    if file.exists() and PART2_TEST_ANSWER is not None:
-        puzzle_input = file.read_text().strip()
-        assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
-
-    file = pathlib.Path(DIR + 'test.txt')
-    if file.exists():
-        puzzle_input = file.read_text().strip()
-        if PART1_TEST_ANSWER is not None:
-            assert part1(parse(puzzle_input)) == PART1_TEST_ANSWER
-        if PART2_TEST_ANSWER is not None:
-            assert part2(parse(puzzle_input)) == PART2_TEST_ANSWER
-
-    for infile in ('input.txt',):
-        print(f'{infile}:')
-        puzzle_input = pathlib.Path(DIR + infile).read_text().strip()
-        solutions = solve(puzzle_input)
-        print('\n'.join(str(solution) for solution in solutions))
-        print()
+    test(1, working_directory)
+    test(2, working_directory)
+    print()
+    solve(1, working_directory)
+    solve(2, working_directory)
