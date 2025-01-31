@@ -1,18 +1,38 @@
+from collections.abc import MutableSequence
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 5
+PART2_TEST_ANSWER = 10
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return [int(line) for line in puzzle_input.split('\n')]
+
+
+def jump(address: int, instructions: MutableSequence[int], strange: bool = False) -> int:
+    next_address: int = address + instructions[address]
+    if strange and instructions[address] >= 3:
+        instructions[address] -= 1
+    else:
+        instructions[address] += 1
+    return next_address
 
 
 def part1(data):
-    return None
+    address: int = 0
+    steps: int = 0
+    while 0 <= address < len(data):
+        address = jump(address, data)
+        steps += 1
+    return steps
 
 
 def part2(data):
-    return None
+    address: int = 0
+    steps: int = 0
+    while 0 <= address < len(data):
+        address = jump(address, data, strange=True)
+        steps += 1
+    return steps
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
