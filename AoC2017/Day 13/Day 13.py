@@ -1,18 +1,44 @@
+from typing import NamedTuple
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 24
+PART2_TEST_ANSWER = 10
+
+
+class Scanner(NamedTuple):
+    depth: int
+    range: int
+
+    def position(self, t: int) -> int:
+        period: int = 2 * (self.range - 1)
+        t %= period
+        if t < self.range:
+            return t
+        return period - t
+
+    def caught(self, delay: int = 0) -> bool:
+        return self.position(self.depth + delay) == 0
+
+    def severity(self) -> int:
+        return self.depth * self.range
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    scanners: list[Scanner] = []
+    for line in puzzle_input.split('\n'):
+        depth, scan_range = line.split(':')
+        scanners.append(Scanner(int(depth), int(scan_range)))
+    return scanners
 
 
 def part1(data):
-    return None
+    return sum(scanner.severity() for scanner in data if scanner.caught())
 
 
 def part2(data):
-    return None
+    delay: int = 1
+    while any(scanner.caught(delay) for scanner in data):
+        delay += 1
+    return delay
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
