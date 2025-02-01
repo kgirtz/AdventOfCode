@@ -1,18 +1,39 @@
+from collections.abc import Mapping, Set
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 6
+PART2_TEST_ANSWER = 2
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    pipes: dict[int, frozenset[int]] = {}
+    for line in puzzle_input.split('\n'):
+        left, rights = line.split(' <-> ')
+        pipes[int(left)] = frozenset(int(n) for n in rights.split(','))
+    return pipes
+
+
+def find_group(id_num: int, pipes: Mapping[int, Set[int]]) -> set[int]:
+    group: set[int] = set()
+    new_ids: set[int] = {id_num}
+    while new_ids:
+        cur_id: int = new_ids.pop()
+        group.add(cur_id)
+        new_ids.update(pipes[cur_id] - group)
+    return group
 
 
 def part1(data):
-    return None
+    return len(find_group(0, data))
 
 
 def part2(data):
-    return None
+    num_groups: int = 0
+    ids: set[int] = set(data.keys())
+    while ids:
+        cur_id: int = ids.pop()
+        ids -= find_group(cur_id, data)
+        num_groups += 1
+    return num_groups
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
