@@ -1,18 +1,63 @@
+from space import Space
+from xypair import XYpair
+from pointwalker import PointWalker
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 'ABCDEF'
+PART2_TEST_ANSWER = 38
+
+
+class RoutingDiagram(Space):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        
+        self.path: set[XYpair] = set()
+        for pts in self.items.values():
+            self.path.update(pts)
+        
+        self.letters: dict[XYpair, str] = {}
+        for symbol, pts in self.items.items():
+            if symbol.isalpha():
+                pt: XYpair = list(pts).pop()
+                self.letters[pt] = symbol
+        
+        self.starting_point: XYpair = min(self.items['|'], key=lambda pt: pt.y).up()
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input
+
+
+def follow_path(diagram: RoutingDiagram) -> (str, int):
+    walker: PointWalker = PointWalker(diagram.starting_point, 'SOUTH')
+    passed: str = ''
+    while True:
+        if walker.position in diagram.letters:
+            passed += diagram.letters[walker.position]
+        
+        if walker.next() in diagram.path:
+            ...
+        elif walker.peek('LEFT') in diagram.path:
+            walker.turn('LEFT')
+        elif walker.peek('RIGHT') in diagram.path:
+            walker.turn('RIGHT')
+        else:
+            break
+        
+        walker.step()
+    
+    return passed, walker.steps_taken
 
 
 def part1(data):
-    return None
+    diagram: RoutingDiagram = RoutingDiagram(data, default=' ')
+    letters, _ = follow_path(diagram)
+    return letters
 
 
 def part2(data):
-    return None
+    diagram: RoutingDiagram = RoutingDiagram(data, default=' ')
+    _, num_steps = follow_path(diagram)
+    return num_steps
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
