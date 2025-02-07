@@ -1,18 +1,32 @@
 
-PART1_TEST_ANSWER = None
+from llnode import LLNode
+
+PART1_TEST_ANSWER = 638
 PART2_TEST_ANSWER = None
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return int(puzzle_input)
+
+
+def insert_values(cur_position: LLNode, skip_length: int, num_insertions: int) -> LLNode:
+    for i in range(num_insertions):
+        cur_position = cur_position.next(skip_length)
+        cur_position.insert_after(LLNode(i + 1))
+        cur_position = cur_position.next()
+    return cur_position
 
 
 def part1(data):
-    return None
+    buf: LLNode = LLNode(0, circular=True)
+    cur_position = insert_values(buf, data, 2017)
+    return cur_position.next().value
 
 
 def part2(data):
-    return None
+    zero_position: LLNode = LLNode(0, circular=True)
+    insert_values(zero_position, data, 50000000)
+    return zero_position.next().value
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
