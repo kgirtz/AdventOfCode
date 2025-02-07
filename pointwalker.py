@@ -78,19 +78,27 @@ class State(typing.NamedTuple):
 
 class PointWalker:
     @typing.overload
-    def __init__(self, initial_position: xypair.XYtuple, initial_heading: Heading | str) -> None:
+    def __init__(self, initial_position: xypair.XYtuple, initial_heading: Heading | str, /) -> None:
         ...
 
     @typing.overload
-    def __init__(self, walker: typing.Self) -> None:
+    def __init__(self, state: State, /) -> None:
+        ...
+
+    @typing.overload
+    def __init__(self, walker: typing.Self, /) -> None:
         ...
 
     def __init__(self, *args) -> None:
         # position/heading are used for shallow copy, comparison, etc
-        if len(args) == 1:
+        if isinstance(args[0], PointWalker):
             walker: PointWalker = args[0]
             self.position: xypair.XYpair = walker.position
             self.heading: Heading = walker.heading
+        elif isinstance(args[0], State):
+            state: State = args[0]
+            self.position: xypair.XYpair = state.position
+            self.heading: Heading = state.heading
         else:
             initial_position, initial_heading = args
             self.position = xypair.XYpair(*initial_position)
@@ -101,6 +109,7 @@ class PointWalker:
         self.track_history: bool = False
         self.history: list[State] = []
         self.visited: set[State] = set()
+        self.steps_taken: int = 0
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.position}, {self.heading})'
@@ -110,9 +119,6 @@ class PointWalker:
 
     def __eq__(self, other: typing.Self) -> bool:
         return self.state() == other.state()
-
-    def __len__(self) -> int:
-        return len(self.visited_points())
 
     def __copy__(self) -> typing.Self:
         return self.copy()
@@ -158,6 +164,7 @@ class PointWalker:
 
     def step(self) -> None:
         self.move()
+        self.steps_taken += 1
 
     def move(self, distance: int = 1, direction: Direction | str = Direction.FORWARD) -> None:
         self.record()
