@@ -1,4 +1,7 @@
-from collections.abc import Sequence, Mapping
+import functools
+from collections.abc import Iterable
+
+from aoctools import iterate_state
 
 PART1_TEST_ANSWER = None  # 'baedc'
 PART2_TEST_ANSWER = None
@@ -6,6 +9,10 @@ PART2_TEST_ANSWER = None
 
 def parse(puzzle_input: str):
     return puzzle_input.strip().split(',')
+
+
+def initial_program_state(num_programs: int) -> tuple[str, ...]:
+    return tuple(chr(ord('a') + i) for i in range(num_programs))
 
 
 def dance_move(programs: tuple[str, ...], move: str) -> tuple[str, ...]:
@@ -29,48 +36,22 @@ def dance_move(programs: tuple[str, ...], move: str) -> tuple[str, ...]:
     return tuple(new_programs)
 
 
-def initial_program_state(num_programs: int) -> tuple[str, ...]:
-    return tuple(chr(ord('a') + i) for i in range(num_programs))
-
-
-def dance(state: Sequence[str, ...], transform: Mapping[int, int]) -> tuple[str, ...]:
-    return tuple(state[transform[i]] for i in range(len(state)))
-
-
-def iterate_transformation(initial_state: tuple[str, ...], num_iterations: int, transform: Mapping[int, int]) -> tuple[str, ...]:
-    seen: dict[..., int] = {}
-    state: tuple[str, ...] = initial_state
-    for i in range(num_iterations):
-        seen[state] = i
-
-        state = dance(state, transform)
-
-        if state in seen:
-            startup: int = seen[state]
-            cycle_length: int = i - startup + 1
-            reduced_minutes: int = (num_iterations - startup) % cycle_length
-            return iterate_transformation(state, reduced_minutes, transform)
-
-    return state
+def dance(starting_state: Iterable[str], moves: Iterable[str]) -> tuple[str, ...]:
+    programs: tuple[str, ...] = tuple(starting_state)
+    for move in moves:
+        programs = dance_move(programs, move)
+    return programs
 
 
 def part1(data):
-    programs: tuple[str, ...] = initial_program_state(16)  # test = 5, input = 16
-    for move in data:
-        programs = dance_move(programs, move)
-    return ''.join(programs)
+    starting_state: tuple[str, ...] = initial_program_state(16)  # test = 5, input = 16
+    return ''.join(dance(starting_state, data))
 
 
-def part2(data):  # abkjefdhcgilmnop is not correct
-    num_programs: int = 16
-    starting_state: tuple[str, ...] = initial_program_state(num_programs)
-    programs: tuple[str, ...] = starting_state
-    for move in data:
-        programs = dance_move(programs, move)
-
-    transformation: dict[int, int] = {programs.index(p): i for i, p in enumerate(starting_state)}
-    programs = iterate_transformation(starting_state, 1000000000, transformation)
-    return ''.join(programs)
+def part2(data):
+    full_dance = functools.partial(dance, moves=data)
+    starting_state: tuple[str, ...] = initial_program_state(16)
+    return ''.join(iterate_state(starting_state, 1000000000, full_dance))
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
