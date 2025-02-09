@@ -30,11 +30,12 @@ def iterate_state(initial_state: _T, num_iterations: int, transformation: collec
 def linear_roots_int(a: int, b: int) -> int | None:
     """ Solves ax + b = 0 for real, integer roots only """
 
-    x: int = int(-b / a)
-    if a * x + b == 0:
-        return x
-    else:
-        return None
+    if a != 0:
+        x: int = int(-b / a)
+        if a * x + b == 0:
+            return x
+
+    return None
 
 
 def quadratic_roots_int(a: int, b: int, c: int) -> tuple[int | None, ...]:
