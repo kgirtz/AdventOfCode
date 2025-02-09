@@ -40,11 +40,40 @@ class XYZtrio(typing.NamedTuple):
     def manhattan_distance(self, start: typing.Self) -> int:
         return abs(self.x - start.x) + abs(self.y - start.y) + abs(self.z - start.z)
 
+    def __add__(self, other: XYZtuple) -> typing.Self:
+        if isinstance(other, tuple):
+            other = XYZtrio(*other)
+            return XYZtrio(self.x + other.x, self.y + other.y, self.z + other.z)
+        return NotImplemented
+
+    def __radd__(self, other: typing.Any) -> typing.Self:
+        return self + other
+
+    def __sub__(self, other: XYZtuple) -> typing.Self:
+        if isinstance(other, tuple):
+            other = XYZtrio(*other)
+            return XYZtrio(self.x - other.x, self.y - other.y, self.z - other.z)
+        return NotImplemented
+
+    def __rsub__(self, other: XYZtuple) -> XYZtuple:
+        if isinstance(other, tuple):
+            other = XYZtrio(*other)
+            return other.x - self.x, other.y - self.y, other.z - self.z
+        return NotImplemented
+
+    def __mul__(self, other: int) -> typing.Self:
+        if isinstance(other, int):
+            return XYZtrio(self.x * other, self.y * other, self.z * other)
+        return NotImplemented
+
+    def __rmul__(self, other: typing.Any) -> typing.Self:
+        return self * other
+
     def __pos__(self) -> typing.Self:
         return self
 
     def __neg__(self) -> typing.Self:
-        return XYZtrio(-self.x, -self.y, -self.z)
+        return self * -1
 
     def __abs__(self) -> float:
         return self.distance(ORIGIN)

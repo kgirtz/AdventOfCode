@@ -158,7 +158,7 @@ class XYpair(typing.NamedTuple):
         return self
 
     def __neg__(self) -> typing.Self:
-        return XYpair(-self.x, -self.y)
+        return self * -1
 
     def __abs__(self) -> float:
         return self.distance(ORIGIN)
