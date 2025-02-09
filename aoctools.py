@@ -40,6 +40,10 @@ def linear_roots_int(a: int, b: int) -> int | None:
 def quadratic_roots_int(a: int, b: int, c: int) -> tuple[int | None, ...]:
     """ Solves ax^2 + bx + c = 0 for real, integer roots only """
 
+    if a == 0:
+        linear_root: int | None = linear_roots_int(b, c)
+        return linear_root, linear_root
+
     discriminant: int = b ** 2 - 4 * a * c
     if discriminant < 0:
         return None, None
