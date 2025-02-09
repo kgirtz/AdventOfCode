@@ -31,7 +31,7 @@ def linear_roots_int(a: int, b: int) -> int | None:
     """ Solves ax + b = 0 for real, integer roots only """
 
     if a != 0:
-        x: int = int(-b / a)
+        x: int = round(-b / a)
         if a * x + b == 0:
             return x
 
@@ -50,11 +50,11 @@ def quadratic_roots_int(a: int, b: int, c: int) -> tuple[int | None, ...]:
         return None, None
 
     integer_roots: list[int | None] = [None, None]
-    x: int = int((-b - math.sqrt(discriminant)) / (2 * a))
+    x: int = round(((-b - math.sqrt(discriminant)) / (2 * a)))
     if a * (x ** 2) + b * x + c == 0:
         integer_roots[0] = x
 
-    x = int((-b + math.sqrt(discriminant)) / (2 * a))
+    x = round((-b + math.sqrt(discriminant)) / (2 * a))
     if a * (x ** 2) + b * x + c == 0:
         integer_roots[1] = x
 
