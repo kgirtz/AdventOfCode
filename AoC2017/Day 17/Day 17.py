@@ -1,4 +1,3 @@
-
 from llnode import LLNode
 
 PART1_TEST_ANSWER = 638
@@ -24,9 +23,15 @@ def part1(data):
 
 
 def part2(data):
-    zero_position: LLNode = LLNode(0, circular=True)
-    insert_values(zero_position, data, 50000000)
-    return zero_position.next().value
+    num_insertions: int = 50000000
+    cur_position: int = 0
+    after_zero: int = 0
+    for i in range(1, num_insertions):
+        cur_position = (cur_position + data) % i
+        if cur_position == 0:
+            after_zero = i
+        cur_position += 1
+    return after_zero
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
