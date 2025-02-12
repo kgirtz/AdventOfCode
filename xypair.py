@@ -28,9 +28,6 @@ class XYpair(typing.NamedTuple):
     def __str__(self) -> str:
         return str(tuple(self))
 
-    def __bool__(self) -> bool:
-        return self != ORIGIN
-
     def left(self, distance: int = 1) -> typing.Self:
         return XYpair(self.x - distance, self.y)
 

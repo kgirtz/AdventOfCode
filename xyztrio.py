@@ -29,9 +29,6 @@ class XYZtrio(typing.NamedTuple):
     def __str__(self) -> str:
         return str(tuple(self))
 
-    def __bool__(self) -> bool:
-        return self != ORIGIN
-
     @accept_tuple_method
     def distance(self, start: typing.Self) -> float:
         return math.hypot(self.x - start.x, self.y - start.y, self.z - start.z)
