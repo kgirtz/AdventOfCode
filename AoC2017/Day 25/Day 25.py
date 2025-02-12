@@ -4,11 +4,43 @@ PART2_TEST_ANSWER = None
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    config, *state_strs = puzzle_input.split('\n\n')
+    initial_state: str = config.split('\n')[0].split()[-1].rstrip('.')
+    num_steps: int = int(config.split()[-2])
+
+    states: dict[str, list[tuple[int, int, str]]] = {}
+    for state_str in state_strs:
+        lines: list[str] = state_str.split('\n')
+        name: str = lines[0][-2]
+        lines = lines[1:]
+        actions: list[tuple[int, int, str]] = []
+        for v in range(2):
+            v *= 4
+            value: int = int(lines[v + 1].split()[-1].rstrip('.'))
+            direction: int = -1 if lines[v + 2].split()[-1] == 'left.' else 1
+            next_state: str = lines[v + 3].split()[-1].rstrip('.')
+            actions.append((value, direction, next_state))
+        states[name] = actions
+
+    return initial_state, num_steps, states
 
 
 def part1(data):
-    return None
+    cur_state, num_steps, states = data
+
+    ones: set[int] = set()
+    cur_pos: int = 0
+    for _ in range(num_steps):
+        cur_value: int = int(cur_pos in ones)
+        new_value, direction, cur_state = states[cur_state][cur_value]
+        if new_value == 1:
+            ones.add(cur_pos)
+        else:
+            ones.discard(cur_pos)
+
+        cur_pos += direction
+
+    return len(ones)
 
 
 def part2(data):
@@ -95,7 +127,7 @@ if __name__ == '__main__':
     working_directory: str = os.path.dirname(__file__)
 
     test(1, working_directory)
-    test(2, working_directory)
+    #test(2, working_directory)
     print()
     solve(1, working_directory)
-    solve(2, working_directory)
+    #solve(2, working_directory)
