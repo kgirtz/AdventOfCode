@@ -1,18 +1,48 @@
+import collections
+import itertools
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+from xyztrio import XYZtrio, ORIGIN
+from particle import Particle3D
+
+PART1_TEST_ANSWER = 0
+PART2_TEST_ANSWER = 1
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    particles: list[Particle3D] = []
+    for line in puzzle_input.split('\n'):
+        p, v, a = line.split('>, ')
+        position: XYZtrio = XYZtrio(*(int(n) for n in p.lstrip('p=<').split(',')))
+        velocity: XYZtrio = XYZtrio(*(int(n) for n in v.lstrip('v=<').split(',')))
+        acceleration: XYZtrio = XYZtrio(*(int(n) for n in a.lstrip('a=<').rstrip('>').split(',')))
+        particles.append(Particle3D(position, velocity, acceleration))
+    return particles
 
 
 def part1(data):
-    return None
+    min_accel: int = min(data, key=lambda p: p.acceleration.manhattan_distance(ORIGIN))
+    return data.index(min_accel)
 
 
-def part2(data):
-    return None
+def part2(data):  # 601 is too high
+    particles_remaining: set[Particle3D] = set(data)
+    collisions: list[tuple[int, Particle3D, Particle3D]] = []
+    for p1, p2 in itertools.combinations(data, 2):
+        if (t := p1.collision_time(p2)) != -1:
+            collisions.append((t, p1, p2))
+
+    collisions.sort()
+
+    destroyed: dict[int, set[Particle3D]] = collections.defaultdict(set)
+    for t, p1, p2 in collisions:
+        if (p1 in particles_remaining and p2 in particles_remaining) or \
+           (p1 in particles_remaining and p2 in destroyed[t]) or \
+           (p2 in particles_remaining and p1 in destroyed[t]):
+
+            destroyed[t].update((p1, p2))
+            particles_remaining.difference_update((p1, p2))
+
+    return len(particles_remaining)
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
