@@ -1,7 +1,5 @@
 import typing
 
-from numpy.distutils.system_info import accelerate_info
-
 import aoctools
 from xypair import XYpair, XYtuple
 from xyztrio import XYZtrio, XYZtuple
