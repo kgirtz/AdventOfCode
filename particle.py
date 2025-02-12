@@ -1,5 +1,7 @@
 import typing
 
+from numpy.distutils.system_info import accelerate_info
+
 import aoctools
 from xypair import XYpair, XYtuple
 from xyztrio import XYZtrio, XYZtuple
@@ -10,6 +12,18 @@ class Particle2D:
         self.position: XYpair = XYpair(*position)
         self.velocity: XYpair = XYpair(*velocity)
         self.acceleration: XYpair = XYpair(*acceleration)
+
+    def __repr__(self) -> str:
+        p_str: str = f'position={tuple(self.position)}'
+        v_str: str = f'velocity={tuple(self.velocity)}'
+        a_str: str = f', acceleration={tuple(self.acceleration)}' if self.acceleration != (0, 0) else ''
+        return f'{self.__class__.__name__}({p_str}, {v_str}{a_str})'
+
+    def __str__(self) -> str:
+        p_str: str = f'p={tuple(self.position)}'
+        v_str: str = f'v={tuple(self.velocity)}'
+        a_str: str = f', a={tuple(self.acceleration)}' if self.acceleration != (0, 0) else ''
+        return f'({p_str}, {v_str}{a_str})'
 
     def __hash__(self) -> int:
         return hash((self.position, self.velocity, self.acceleration))
@@ -70,6 +84,18 @@ class Particle3D:
         self.position: XYZtrio = XYZtrio(*position)
         self.velocity: XYZtrio = XYZtrio(*velocity)
         self.acceleration: XYZtrio = XYZtrio(*acceleration)
+
+    def __repr__(self) -> str:
+        p_str: str = f'position={tuple(self.position)}'
+        v_str: str = f'velocity={tuple(self.velocity)}'
+        a_str: str = f', acceleration={tuple(self.acceleration)}' if self.acceleration != (0, 0, 0) else ''
+        return f'{self.__class__.__name__}({p_str}, {v_str}{a_str})'
+
+    def __str__(self) -> str:
+        p_str: str = f'p={tuple(self.position)}'
+        v_str: str = f'v={tuple(self.velocity)}'
+        a_str: str = f', a={tuple(self.acceleration)}' if self.acceleration != (0, 0, 0) else ''
+        return f'({p_str}, {v_str}{a_str})'
     
     def __hash__(self) -> int:
         return hash((self.position, self.velocity, self.acceleration))
