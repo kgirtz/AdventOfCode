@@ -1,18 +1,65 @@
+from xypair import XYpair
+from pointwalker import PointWalker
+from space import Space
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 5587
+PART2_TEST_ANSWER = 2511944
+
+
+class Cluster(Space):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.infected_nodes: set[XYpair] = self.items['#']
+        self.weakened_nodes: set[XYpair] = set()
+        self.flagged_nodes: set[XYpair] = set()
+        self.carrier: PointWalker = PointWalker((self.width // 2, self.height // 2), 'NORTH')
+        self.infections_caused: int = 0
+
+    def burst(self, *, evolved: bool = False) -> None:
+        cur_pos: XYpair = self.carrier.position
+        if cur_pos in self.infected_nodes:
+            self.carrier.turn('RIGHT')
+            self.infected_nodes.remove(cur_pos)
+            if evolved:
+                self.flagged_nodes.add(cur_pos)
+
+        elif cur_pos in self.weakened_nodes:
+            self.weakened_nodes.remove(cur_pos)
+            self.infected_nodes.add(cur_pos)
+            self.infections_caused += 1
+
+        elif cur_pos in self.flagged_nodes:
+            self.carrier.turn('BACKWARD')
+            self.flagged_nodes.remove(cur_pos)
+
+        else:
+            self.carrier.turn('LEFT')
+            if evolved:
+                self.weakened_nodes.add(cur_pos)
+            else:
+                self.infected_nodes.add(cur_pos)
+                self.infections_caused += 1
+
+        self.carrier.step()
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.strip()
 
 
 def part1(data):
-    return None
+    cluster: Cluster = Cluster(data)
+    for _ in range(10000):
+        cluster.burst()
+    return cluster.infections_caused
 
 
 def part2(data):
-    return None
+    cluster: Cluster = Cluster(data)
+    for _ in range(10000000):
+        cluster.burst(evolved=True)
+    return cluster.infections_caused
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
@@ -98,4 +145,4 @@ if __name__ == '__main__':
     test(2, working_directory)
     print()
     solve(1, working_directory)
-    solve(2, working_directory)
+    #solve(2, working_directory)
