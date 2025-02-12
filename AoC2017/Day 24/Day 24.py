@@ -1,18 +1,65 @@
+import functools
+from collections.abc import Iterable, Set
+from typing import TypeAlias
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 31
+PART2_TEST_ANSWER = 19
+
+Component: TypeAlias = tuple[int, ...]
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return [tuple(int(n) for n in line.split('/')) for line in puzzle_input.split('\n')]
+
+
+@functools.cache
+def strongest_bridge(open_port: int, components: Set[Component]) -> list[Component]:
+    connectable: list[Component] = [comp for comp in components if open_port in comp]
+    if not connectable:
+        return []
+
+    max_strength: int = 0
+    max_bridge: list[Component] = []
+    for comp in connectable:
+        other_port: int = comp[1] if comp[0] == open_port else comp[0]
+        remaining_components: frozenset[Component] = frozenset(components - {comp})
+        sub_bridge: list[Component] = [comp] + strongest_bridge(other_port, remaining_components)
+        sub_strength: int = strength(sub_bridge)
+        if sub_strength > max_strength:
+            max_strength = sub_strength
+            max_bridge = sub_bridge
+
+    return max_bridge
+
+
+@functools.cache
+def longest_bridge(open_port: int, components: Set[Component]) -> list[Component]:
+    connectable: list[Component] = [comp for comp in components if open_port in comp]
+    if not connectable:
+        return []
+
+    long_bridge: list[Component] = []
+    for comp in connectable:
+        other_port: int = comp[1] if comp[0] == open_port else comp[0]
+        remaining_components: frozenset[Component] = frozenset(components - {comp})
+        sub_bridge: list[Component] = [comp] + longest_bridge(other_port, remaining_components)
+        if len(sub_bridge) > len(long_bridge) or (len(sub_bridge) == len(long_bridge) and
+                                                  strength(sub_bridge) > strength(long_bridge)):
+            long_bridge = sub_bridge
+
+    return long_bridge
+
+
+def strength(bridge: Iterable[Component]) -> int:
+    return sum(sum(component) for component in bridge)
 
 
 def part1(data):
-    return None
+    return strength(strongest_bridge(0, frozenset(data)))
 
 
 def part2(data):
-    return None
+    return strength(longest_bridge(0, frozenset(data)))
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
