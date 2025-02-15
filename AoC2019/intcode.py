@@ -1,4 +1,4 @@
-from typing import Optional
+from collections.abc import Iterable, Reversible
 
 DEBUG = False
 
@@ -12,7 +12,7 @@ class IntcodeComputer:
         self.memory: dict[int, int] = {}
         self.relative_base: int = 0
 
-    def initialize(self, intcode: list[int], noun: Optional[int] = None, verb: Optional[int] = None) -> None:
+    def initialize(self, intcode: Iterable[int], noun: int | None = None, verb: int | None = None) -> None:
         self.pc = 0
         self.state = 'READY'
         self.input.clear()
@@ -32,14 +32,15 @@ class IntcodeComputer:
             mode //= 10
         mode %= 10
 
-        if mode == 0:
-            op: int = self.memory.get(value, 0)
-            return op, f'[{value}]=>{op}'
-        elif mode == 1:
-            return value, str(value)
-        elif mode == 2:
-            op = self.memory.get(value + self.relative_base, 0)
-            return op, f'[{value} + {self.relative_base}]=>{op}'
+        match mode:
+            case 0:
+                op: int = self.memory.get(value, 0)
+                return op, f'[{value}]=>{op}'
+            case 1:
+                return value, str(value)
+            case 2:
+                op = self.memory.get(value + self.relative_base, 0)
+                return op, f'[{value} + {self.relative_base}]=>{op}'
 
     def dst_operand(self, position: int) -> tuple[int, str]:
         value: int = self.memory[self.pc + position]
@@ -48,10 +49,11 @@ class IntcodeComputer:
             mode //= 10
         mode %= 10
 
-        if mode == 0:
-            return value, f'{value}'
-        elif mode == 2:
-            return value + self.relative_base, f'{value} + {self.relative_base}'
+        match mode:
+            case 0:
+                return value, f'{value}'
+            case 2:
+                return value + self.relative_base, f'{value} + {self.relative_base}'
 
     def execute_instruction(self) -> None:
         opcode: int = self.memory[self.pc] % 100
@@ -137,7 +139,7 @@ class IntcodeComputer:
                     print(f'{prefix} HALT')
                 self.state = 'HALTED'
 
-    def run(self, inputs: Optional[list[int]] = None) -> list[int]:
+    def run(self, inputs: Reversible[int] | None = None) -> list[int]:
         if inputs is None:
             self.input = []
         else:
@@ -157,8 +159,8 @@ class IntcodeComputer:
         self.run([ord(ch) for ch in str_input])
         return self.output_ASCII()
 
-    def execute(self, intcode: list[int], inputs: Optional[list[int]] = None,
-                noun: Optional[int] = None, verb: Optional[int] = None) -> list[int]:
+    def execute(self, intcode: Iterable[int], inputs: Iterable[int] | None = None,
+                noun: int | None = None, verb: int | None = None) -> list[int]:
 
         self.initialize(intcode, noun, verb)
         return self.run(inputs)
