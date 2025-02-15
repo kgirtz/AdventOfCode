@@ -2,34 +2,29 @@ import abc
 import collections
 import typing
 
-SUCCESS_CODE: int = 0
-HALT_CODE: int = 1
-
-
-def register_key(key: str | int) -> str | int:
-    """ Convert numeric strings into integers. """
-    try:
-        return int(key)
-    except ValueError:
-        return key
-
 
 class AbstractComputer(abc.ABC):
     # Set a specific register as the program counter
     IP_REGISTER: str | int = '_IP'
+
+    SUCCESS: int = 0
+    HALT: int = 1
+    WAIT_FOR_INPUT: int = 2
     
     def __init__(self) -> None:
-        self._registers: dict[str | int, int] = collections.defaultdict(int)
+        self.register: dict[str | int, int] = collections.defaultdict(int)
         self._memory: dict[int, str | int] = {}
         self.instruction: collections.abc.Iterable[str | int] = ''
         self.opcode: str | int = ''
-        self.operands: collections.abc.Iterable[str | int] = tuple()
+        self.operands: tuple[str | int, ...] = tuple()
         self._input_buffer: collections.deque[int] = collections.deque()
         self._output_buffer: collections.deque[int] = collections.deque()
         
         # Statistics
         self.instructions_executed: int = 0
         self.instruction_count: dict[str | int, int] = collections.defaultdict(int)
+        self.inputs_processed: int = 0
+        self.outputs_generated: int = 0
         
         # Initialize
         self.reset()
@@ -38,11 +33,11 @@ class AbstractComputer(abc.ABC):
     @property
     def ip(self) -> int:
         """ Instruction Pointer """
-        return self.register(self.IP_REGISTER)
+        return self.register[self.IP_REGISTER]
     
     @ip.setter
     def ip(self, address: int) -> None:
-        self.write_register(self.IP_REGISTER, address)
+        self.register[self.IP_REGISTER] = address
     
     def reset(self) -> None:
         """ When overwriting in subclasses call super().reset() before setting new attributes. """
@@ -55,15 +50,9 @@ class AbstractComputer(abc.ABC):
         
         self.instructions_executed = 0
         self.instruction_count = collections.defaultdict(int)
-    
-    def register(self, register: str | int) -> int:
-        return self._registers[register_key(register)]
-    
-    def write_register(self, register: str | int, value: int) -> None:
-        self._registers[register_key(register)] = value
 
     def clear_registers(self) -> None:
-        self._registers = collections.defaultdict(int)
+        self.register = collections.defaultdict(int)
     
     def read_memory(self, address: int) -> str | int:
         return self._memory[address]
@@ -82,28 +71,45 @@ class AbstractComputer(abc.ABC):
         return len(self._memory)
 
     def input_available(self) -> bool:
-        return bool(self._input_buffer)
+        return self.input_buffer_length() > 0
 
     def clear_input_buffer(self) -> None:
         self._input_buffer = collections.deque()
+        self.inputs_processed = 0
+
+    def input_buffer_length(self) -> int:
+        return len(self._input_buffer)
 
     def next_input(self) -> int:
+        self.inputs_processed += 1
         return self._input_buffer.popleft()
 
     def add_to_input_buffer(self, inputs: collections.abc.Iterable[int]) -> None:
         self._input_buffer.extend(inputs)
 
     def output_available(self) -> bool:
-        return bool(self._output_buffer)
+        return self.output_buffer_length() > 0
 
     def clear_output_buffer(self) -> None:
         self._output_buffer = collections.deque()
+        self.outputs_generated = 0
+
+    def output_buffer_length(self) -> int:
+        return len(self._output_buffer)
 
     def next_output(self) -> int:
         return self._output_buffer.popleft()
 
-    def add_to_output_buffer(self, outputs: collections.abc.Iterable[int]) -> None:
-        self._output_buffer.extend(outputs)
+    def add_to_output_buffer(self, output_value: int) -> None:
+        self._output_buffer.append(output_value)
+        self.outputs_generated += 1
+
+    def send_to(self, peer: typing.Self) -> None:
+        if self.output_available():
+            peer.add_to_input_buffer([self.next_output()])
+
+    def receive_from(self, peer: typing.Self) -> None:
+        peer.send_to(self)
 
     def run(self) -> None:
         while self.step():
@@ -115,10 +121,12 @@ class AbstractComputer(abc.ABC):
                 True = ready to run next instruction
                 False = error or halted (IP points outside program address space or waiting for input)
         """
-        if self.fetch() != SUCCESS_CODE:
+        if self.fetch() == self.HALT:
             return False
 
-        if self.decode() != SUCCESS_CODE:
+        if self.decode() == self.WAIT_FOR_INPUT:
+            # Repeat current instruction
+            self.ip -= self.instruction_length()
             return False
 
         self.execute()
@@ -135,11 +143,8 @@ class AbstractComputer(abc.ABC):
         return 1
 
     @staticmethod
-    def immediate_operand(operand: str | int, base: int = 10) -> int:
+    def immediate_value(operand: str | int, base: int = 10) -> int:
         return int(operand, base)
-    
-    def register_operand(self, operand: str | int) -> int:
-        return self.register(operand)
 
     def memory_operand(self, operand: str | int, base: int = 10) -> int:
         return self.read_memory(int(operand, base))
@@ -160,10 +165,10 @@ class AbstractComputer(abc.ABC):
             self.instruction = self.read_memory(self.ip)
         except LookupError:
             # IP is outside program address space
-            return HALT_CODE
+            return self.HALT
 
         self.ip += self.instruction_length()
-        return SUCCESS_CODE
+        return self.SUCCESS
     
     def decode(self) -> int:
         """ Overwrite to interpret opcode and operands for each instruction as immediate, register, memory, etc.
@@ -173,8 +178,8 @@ class AbstractComputer(abc.ABC):
         """
         self.instruction = typing.cast(str, self.instruction)
         self.opcode, *operands = self.instruction.split()
-        self.operands = tuple(self.immediate_operand(op) for op in operands)
-        return SUCCESS_CODE
+        self.operands = tuple(self.immediate_value(op) for op in operands)
+        return self.SUCCESS
 
     @abc.abstractmethod
     def execute(self) -> None:
@@ -185,25 +190,25 @@ class Computer(AbstractComputer):
     def execute(self) -> None:
         if self.opcode == 'add':
             x, y = self.operands
-            self.write_register('a', x + y)
+            self.register['a'] = x + y
         if self.opcode == 'sub':
             x, y = self.operands
-            self.write_register('a', x - y)
+            self.register['a'] = x - y
         if self.opcode == 'mul':
             x, y = self.operands
-            self.write_register('a', x * y)
+            self.register['a'] = x * y
         if self.opcode == 'div':
             x, y = self.operands
-            self.write_register('a', x // y)
+            self.register['a'] = x // y
         if self.opcode == 'set':
             x, = self.operands
-            self.write_register('b', x)
+            self.register['b'] = x
 
 
 prog = ['add 3 8', 'mul 2 7', 'set 100']
 comp = Computer()
 comp.load_memory(prog)
-assert comp.register('a') == 0 and comp.register('b') == 0
+assert comp.register['a'] == 0 and comp.register['b'] == 0
 comp.reset()
 comp.run()
-assert comp.register('a') == 14 and comp.register('b') == 100
+assert comp.register['a'] == 14 and comp.register['b'] == 100
