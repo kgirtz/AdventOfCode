@@ -1,6 +1,7 @@
-import collections
-from collections.abc import Sequence, Iterable
-from idlelib.mainmenu import menudefs
+import typing
+from collections.abc import Sequence
+
+from computer import AbstractComputer
 
 PART1_TEST_ANSWER = None
 PART2_TEST_ANSWER = None
@@ -10,64 +11,43 @@ def parse(puzzle_input: str):
     return puzzle_input.split('\n')
 
 
-class Computer:
-    def __init__(self, program: Iterable[str] = tuple()) -> None:
-        self.registers: dict[str, int] = collections.defaultdict(int)
-        self.ip: int = 0
-        self.program: list[str] = list(program)
-        self.instruction_counts: dict[str, int] = collections.defaultdict(int)
-    
-    def reset(self) -> None:
-        self.registers.clear()
-        self.ip = 0
-        self.instruction_counts.clear()
+class Computer(AbstractComputer):
+    def operand_value(self, op: str) -> int:
+        return self.register[op] if op.isalpha() else self.immediate_value(op)
 
-    def run(self, program: Sequence[int] = tuple()) -> None:
-        if not program:
-            program = self.program
-        
-        while 0 <= self.ip < len(program):
-            instruction: str = program[self.ip]
-            self.execute(instruction)
-            self.ip += 1
-    
-    def step(self) -> None:
-        if not (0 <= self.ip < len(self.program)):
-            raise IndexError('instruction pointer is outside program range')
-        
-        instruction: str = self.program[self.ip]
-        self.execute(instruction)
-        self.ip += 1
-    
-    def operand_value(self, operand: str) -> int:
-        try:
-            return int(operand)
-        except ValueError:
-            return self.registers[operand]
+    def decode(self) -> int:
+        self.instruction = typing.cast(str, self.instruction)
+        self.opcode, *operands = self.instruction.split()
 
-    def execute(self, instruction: str) -> None:
-        mnemonic, *operands = instruction.split()
-        self.instruction_counts[mnemonic] += 1
+        x, y = operands
+        if self.opcode == 'jnz':
+            x = self.operand_value(x)
+        y = self.operand_value(y)
 
-        match mnemonic:
+        self.operands = (x, y)
+
+        return self.SUCCESS
+
+    def execute(self) -> None:
+        match self.opcode:
             case 'sub':
-                x, y = operands
-                self.registers[x] -= self.operand_value(y)
+                x, y = self.operands
+                self.register[x] -= y
             case 'mul':
-                x, y = operands
-                self.registers[x] *= self.operand_value(y)
+                x, y = self.operands
+                self.register[x] *= y
             case 'set':
-                x, y = operands
-                self.registers[x] = self.operand_value(y)
+                x, y = self.operands
+                self.register[x] = y
             case 'jnz':
-                x, y = operands
-                if self.operand_value(x) != 0:
-                    self.ip += self.operand_value(y) - 1
+                x, y = self.operands
+                if x != 0:
+                    self.jump_relative(y)
     
     def decompile(self, program: Sequence[str]) -> str:
         instructions: list[str] = []
         for address, instruction in enumerate(program):
-            line: str = self.analyze(instruction, address)
+            line: str = self.analyze(instruction)
             instructions.append(f'{address}: ' + line + ('\n' if 'jmp' in line else ''))
         
         return '\n'.join(instructions)
@@ -95,8 +75,9 @@ class Computer:
 
 def part1(data):
     cpu: Computer = Computer()
-    cpu.run(data)
-    return cpu.instruction_counts['mul']
+    cpu.load_memory(data)
+    cpu.run()
+    return cpu.instruction_count['mul']
 
 
 def part2(data):
@@ -107,17 +88,17 @@ def part2(data):
     # From program reverse engineering
     for b in range(109900, 126900 + 1, 17):
         if b % 2 == 0:
-            cpu.registers['h'] += 1
+            cpu.register['h'] += 1
             continue
         for d in range(3, b, 2):
             if b % d == 0:
-                cpu.registers['h'] += 1
+                cpu.register['h'] += 1
                 break
     
-    cpu.registers['a'] = 1
+    cpu.register['a'] = 1
     # cpu.run(data)  # Takes a long time, but should HALT
     
-    return cpu.registers['h']
+    return cpu.register['h']
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
