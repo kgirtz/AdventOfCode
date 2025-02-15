@@ -129,12 +129,13 @@ class AbstractComputer(abc.ABC):
             self.ip -= self.instruction_length()
             return False
 
-        self.execute()
-        
         # Count each instruction
         self.instructions_executed += 1
         self.instruction_count[self.opcode] += 1
-        
+
+        if self.execute() == self.HALT:
+            return False
+
         return True
 
     @staticmethod
@@ -182,7 +183,7 @@ class AbstractComputer(abc.ABC):
         return self.SUCCESS
 
     @abc.abstractmethod
-    def execute(self) -> None:
+    def execute(self) -> int:
         """ Overwrite to define operation for each opcode. """
 
 
