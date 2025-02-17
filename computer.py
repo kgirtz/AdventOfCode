@@ -10,6 +10,9 @@ class AbstractComputer(abc.ABC):
     SUCCESS: int = 0
     HALT: int = 1
     WAIT_FOR_INPUT: int = 2
+
+    CONTINUE: bool = True
+    BREAK: bool = False
     
     def __init__(self) -> None:
         self.register: dict[str | int, int] = collections.defaultdict(int)
@@ -25,6 +28,7 @@ class AbstractComputer(abc.ABC):
         self.instruction_count: dict[str | int, int] = collections.defaultdict(int)
         self.inputs_processed: int = 0
         self.outputs_generated: int = 0
+        self.addresses_executed: set[int] = set()
         
         # Initialize
         self.reset()
@@ -50,6 +54,7 @@ class AbstractComputer(abc.ABC):
         
         self.instructions_executed = 0
         self.instruction_count = collections.defaultdict(int)
+        self.addresses_executed = set()
 
     def clear_registers(self) -> None:
         self.register = collections.defaultdict(int)
@@ -112,8 +117,8 @@ class AbstractComputer(abc.ABC):
         peer.send_to(self)
 
     def run(self) -> None:
-        while self.step():
-            pass
+        while self.step() == self.CONTINUE:
+            ...
     
     def step(self) -> bool:
         """ Execute a single instruction.
@@ -122,26 +127,30 @@ class AbstractComputer(abc.ABC):
                 False = error or halted (IP points outside program address space or waiting for input)
         """
         if self.fetch() == self.HALT:
-            return False
+            return self.BREAK
 
         if self.decode() == self.WAIT_FOR_INPUT:
             # Repeat current instruction
-            self.ip -= self.instruction_length()
-            return False
+            self.ip = self.current_instruction_address()
+            return self.BREAK
 
         # Count each instruction
         self.instructions_executed += 1
         self.instruction_count[self.opcode] += 1
+        self.addresses_executed.add(self.current_instruction_address())
 
         if self.execute() == self.HALT:
-            return False
+            return self.BREAK
 
-        return True
+        return self.CONTINUE
 
     @staticmethod
     def instruction_length() -> int:
         """ Overwrite to change fixed instruction width or implement variable-width instructions. """
         return 1
+
+    def current_instruction_address(self) -> int:
+        return self.ip - self.instruction_length()
 
     @staticmethod
     def immediate_value(operand: str | int, base: int = 10) -> int:
@@ -155,9 +164,9 @@ class AbstractComputer(abc.ABC):
     
     def jump_relative(self, offset: int) -> None:
         """ Fetch already updated IP to next instruction so undo and add the offset. """
-        self.ip += offset - self.instruction_length()
+        self.ip = self.current_instruction_address() + offset
     
-    def fetch(self) -> int:
+    def fetch(self) -> int | None:
         """ Get instruction pointed to by IP. """
         if not self.allocated_memory():
             raise RuntimeError('no program loaded')
@@ -171,7 +180,7 @@ class AbstractComputer(abc.ABC):
         self.ip += self.instruction_length()
         return self.SUCCESS
     
-    def decode(self) -> int:
+    def decode(self) -> int | None:
         """ Overwrite to interpret opcode and operands for each instruction as immediate, register, memory, etc.
             Default opcode behavior: get first symbol of space-separated string.
             Default operand behavior: convert all string operands into immediate base-10 integer values.
@@ -183,7 +192,7 @@ class AbstractComputer(abc.ABC):
         return self.SUCCESS
 
     @abc.abstractmethod
-    def execute(self) -> int:
+    def execute(self) -> int | None:
         """ Overwrite to define operation for each opcode. """
 
 
