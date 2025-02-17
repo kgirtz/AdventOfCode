@@ -1,110 +1,149 @@
-import pathlib
-import sys
-import os
+
+from computer import AbstractComputer
+
+PART1_TEST_ANSWER = 5
+PART2_TEST_ANSWER = 8
 
 
-def parse(puzzle_input):
-    """Parse input"""
-    return [line for line in puzzle_input.split('\n')]
+class GameConsole(AbstractComputer):
+    @property
+    def accumulator(self) -> int:
+        return self.register['acc']
+
+    @accumulator.setter
+    def accumulator(self, value: int) -> None:
+        self.register['acc'] = value
+
+    def execute(self) -> None:
+        op: int = self.operands[0]
+        match self.opcode:
+            case 'acc':
+                self.accumulator += op
+            case 'jmp':
+                self.jump_relative(op)
+            case 'nop':
+                ...
+
+    def step(self) -> bool:
+        # Console can never loop
+        if self.ip in self.addresses_executed:
+            return self.BREAK
+        return super().step()
 
 
-class HandheldGameConsole:
-    def __init__(self) -> None:
-        self.accumulator: int = 0
-        self.pc: int = 0
-
-    @staticmethod
-    def parse_instruction(instruction: str) -> tuple[str, int]:
-        mnemonic, operand = instruction.split()
-        return mnemonic, int(operand)
-
-    def execute(self, instruction: str) -> None:
-        mnemonic, operand = self.parse_instruction(instruction)
-
-        if mnemonic == 'acc':
-            self.accumulator += operand
-            self.pc += 1
-        elif mnemonic == 'jmp':
-            self.pc += operand
-        else:
-            self.pc += 1
-
-    def run(self, instructions: list[str], break_on_loop: bool = False, start: int = 0) -> None:
-        executed: set[int] = set()
-        self.pc = start
-        self.accumulator = 0
-        while self.pc < len(instructions):
-            if break_on_loop and self.pc in executed:
-                return
-            executed.add(self.pc)
-            self.execute(instructions[self.pc])
-
-    def terminal_lines(self, instructions: list[str]) -> set[int]:
-        line_nums: set[int] = set()
-        line_count: int = 1
-        while len(line_nums) != line_count:
-            line_count: int = len(line_nums)
-            for i in range(len(instructions) - 1, -1, -1):
-                if i not in line_nums:
-                    mnemonic, operand = self.parse_instruction(instructions[i])
-                    if mnemonic != 'jmp' and (i == len(instructions) - 1 or i + 1 in line_nums):
-                        line_nums.add(i)
-                    elif mnemonic == 'jmp' and (i + operand in line_nums or i + operand == len(instructions)):
-                        line_nums.add(i)
-        return line_nums
+def parse(puzzle_input: str):
+    return puzzle_input.split('\n')
 
 
 def part1(data):
     """Solve part 1"""
-    device: HandheldGameConsole = HandheldGameConsole()
-    device.run(data, True)
-    return device.accumulator
+    console: GameConsole = GameConsole()
+    console.load_memory(data)
+    console.run()
+    return console.accumulator
 
 
 def part2(data):
     """Solve part 2"""
-    device: HandheldGameConsole = HandheldGameConsole()
-    terminal_line_nums: set[int] = device.terminal_lines(data)
-    patch_idx: int = 0
-    patch: str = ''
-    i: int = 0
-    while i < len(data):
-        mnemonic, operand = device.parse_instruction(data[i])
-        if mnemonic == 'jmp' and i + 1 in terminal_line_nums:
-            patch_idx = i
-            patch = f'nop {operand}'
-            break
-        elif mnemonic == 'nop' and i + operand in terminal_line_nums:
-            patch_idx = i
-            patch = f'jmp {operand}'
-            break
+    console: GameConsole = GameConsole()
 
-        if mnemonic == 'jmp':
-            i += operand
-        else:
-            i += 1
+    program: list[str] = list(data)
+    for address, instruction in enumerate(program):
+        if 'nop' in instruction:
+            program[address] = instruction.replace('nop', 'jmp')
+        elif 'jmp' in instruction:
+            program[address] = instruction.replace('jmp', 'nop')
 
-    if patch:
-        data[patch_idx] = patch
-        device.run(data)
-        return device.accumulator
+        console.load_memory(program)
+        console.run()
+        if console.ip == len(program):
+            return console.accumulator
+
+        program[address] = instruction
+        console.reset()
 
 
-def solve(puzzle_input):
-    """Solve the puzzle for the given input"""
-    data = parse(puzzle_input)
-    solution1 = part1(data)
-    data = parse(puzzle_input)
-    solution2 = part2(data)
-
-    return solution1, solution2
+# ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
 
 
-if __name__ == "__main__":
-    DIR = f'{os.path.dirname(sys.argv[0])}/'
-    for file in ('example.txt', 'input.txt'):
-        print(f"{file}:")
-        puzzle_input = pathlib.Path(DIR + file).read_text().strip()
-        solutions = solve(puzzle_input)
-        print("\n".join(str(solution) for solution in solutions))
-        print()
+import pathlib
+
+
+def get_puzzle_input(file: pathlib.Path) -> str:
+    if not file.exists():
+        return ''
+    return file.read_text().strip('\n').replace('\t', ' ' * 4)
+
+
+def execute(func, puzzle_input: str) -> (..., int):
+    import time
+
+    start: int = time.perf_counter_ns()
+    result = func(parse(puzzle_input))
+    execution_time_us: int = (time.perf_counter_ns() - start) // 1000
+    return result, execution_time_us
+
+
+def timestamp(execution_time_us: int) -> str:
+    stamp: str = f'{round(execution_time_us / 1000000, 3)} s'
+    if execution_time_us < 1000000:
+        stamp = f'{round(execution_time_us / 1000, 3)} ms'
+    return f'\t[{stamp}]'
+
+
+def test(part_num: int, directory: str) -> None:
+    if part_num == 1:
+        func = part1
+        answer = PART1_TEST_ANSWER
+    else:
+        func = part2
+        answer = PART2_TEST_ANSWER
+
+    prefix: str = f'PART {part_num} TEST: '
+    if answer is None:
+        print(prefix + 'skipped')
+        return
+
+    file: pathlib.Path = pathlib.Path(directory, f'part{part_num}_test.txt')
+    if not file.exists():
+        file = pathlib.Path(directory, 'test.txt')
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    result = 'PASS' if result == answer else 'FAIL'
+    print(prefix + result + timestamp(duration))
+
+
+def solve(part_num: int, directory: str) -> None:
+    func = part1 if part_num == 1 else part2
+    prefix: str = f'PART {part_num}: '
+
+    file: pathlib.Path = pathlib.Path(directory, 'input.txt')
+    if not file.exists():
+        # Download file?
+        ...
+
+    puzzle_input: str = get_puzzle_input(file)
+    if not puzzle_input:
+        print(prefix + 'no input')
+        return
+
+    result, duration = execute(func, puzzle_input)
+    suffix: str = '' if result is None else timestamp(duration)
+    print(prefix + str(result) + suffix)
+
+
+if __name__ == '__main__':
+    import os
+
+    working_directory: str = os.path.dirname(__file__)
+
+    test(1, working_directory)
+    test(2, working_directory)
+    print()
+    solve(1, working_directory)
+    solve(2, working_directory)
