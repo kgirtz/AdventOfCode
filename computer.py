@@ -5,14 +5,20 @@ import typing
 
 class AbstractComputer(abc.ABC):
     # Set a specific register as the program counter
-    IP_REGISTER: str | int = '_IP'
+    IP_REGISTER: str | int = '__INSTRUCTION_POINTER__'
 
+    # fetch/decode/execute return status codes
     SUCCESS: int = 0
     HALT: int = 1
     WAIT_FOR_INPUT: int = 2
 
+    # step return status
     CONTINUE: bool = True
     BREAK: bool = False
+
+    # Configure number of clock cycles per instruction
+    DEFAULT_CYCLES_PER_INSTRUCTION: int = 1
+    CYCLES_PER_INSTRUCTION: dict[str | int, int] = {}
     
     def __init__(self) -> None:
         self.register: dict[str | int, int] = collections.defaultdict(int)
@@ -24,7 +30,8 @@ class AbstractComputer(abc.ABC):
         self._output_buffer: collections.deque[int] = collections.deque()
         
         # Statistics
-        self.instructions_executed: int = 0
+        self.clock_cycles: int = 0
+        self.instruction_cycles: int = 0
         self.instruction_count: dict[str | int, int] = collections.defaultdict(int)
         self.inputs_processed: int = 0
         self.outputs_generated: int = 0
@@ -51,8 +58,9 @@ class AbstractComputer(abc.ABC):
         self.operands = tuple()
         self.clear_input_buffer()
         self.clear_output_buffer()
-        
-        self.instructions_executed = 0
+
+        self.clock_cycles = 0
+        self.instruction_cycles = 0
         self.instruction_count = collections.defaultdict(int)
         self.addresses_executed = set()
 
@@ -134,15 +142,15 @@ class AbstractComputer(abc.ABC):
             self.ip = self.current_instruction_address()
             return self.BREAK
 
-        # Count each instruction
-        self.instructions_executed += 1
+        result: int = self.execute()
+
+        # Update stats
+        self.clock_cycles += self.CYCLES_PER_INSTRUCTION.get(self.opcode, self.DEFAULT_CYCLES_PER_INSTRUCTION)
+        self.instruction_cycles += 1
         self.instruction_count[self.opcode] += 1
         self.addresses_executed.add(self.current_instruction_address())
 
-        if self.execute() == self.HALT:
-            return self.BREAK
-
-        return self.CONTINUE
+        return self.BREAK if result == self.HALT else self.CONTINUE
 
     @staticmethod
     def instruction_length() -> int:
