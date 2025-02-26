@@ -145,12 +145,16 @@ class AbstractComputer(abc.ABC):
         result: int = self.execute()
 
         # Update stats
-        self.clock_cycles += self.CYCLES_PER_INSTRUCTION.get(self.opcode, self.DEFAULT_CYCLES_PER_INSTRUCTION)
+        self.clock_cycles += self.current_instruction_clock_cycles()
         self.instruction_cycles += 1
         self.instruction_count[self.opcode] += 1
         self.addresses_executed.add(self.current_instruction_address())
 
         return self.BREAK if result == self.HALT else self.CONTINUE
+
+    def current_instruction_clock_cycles(self) -> int:
+        """ Only valid after calling fetch() """
+        return self.CYCLES_PER_INSTRUCTION.get(self.opcode, self.DEFAULT_CYCLES_PER_INSTRUCTION)
 
     @staticmethod
     def instruction_length() -> int:
