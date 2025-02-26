@@ -1,4 +1,5 @@
 
+from computer import AbstractComputer
 
 PART1_TEST_ANSWER = 13140
 PART2_TEST_ANSWER = '##..##..##..##..##..##..##..##..##..##..\n' + \
@@ -6,79 +7,67 @@ PART2_TEST_ANSWER = '##..##..##..##..##..##..##..##..##..##..\n' + \
                     '####....####....####....####....####....\n' + \
                     '#####.....#####.....#####.....#####.....\n' + \
                     '######......######......######......####\n' + \
-                    '#######.......#######.......#######.....\n'
+                    '#######.......#######.......#######.....'
 
 
-def opcode(instruction: str) -> str:
-    return instruction.split()[0]
+class CRT(AbstractComputer):
+    CYCLES_PER_INSTRUCTION: dict[str, int] = {'addx': 2}
 
+    IMAGE_WIDTH: int = 40
+    IMAGE_HEIGHT: int = 6
 
-def operand(instruction: str) -> str:
-    match opcode(instruction):
-        case 'noop':
-            return ''
-        case 'addx':
-            return instruction.split()[1]
+    def __init__(self, max_cycles: int = -1) -> None:
+        super().__init__()
 
+        self.max_cycles: int = int(max_cycles)
+        self.crt: list[str] = []
 
-def execute_instruction(instruction: str, x: int) -> int:
-    match opcode(instruction):
-        case 'noop':
-            return x
-        case 'addx':
-            return x + int(operand(instruction))
+        self.reset()
 
+    @property
+    def x(self) -> int:
+        return self.register['__x__']
 
-def expanded_program(program: list[str]) -> list[str]:
-    # Replace addx(2-cyc) with noop/addx(1-cyc)
-    for instruction in program:
-        match opcode(instruction):
+    @x.setter
+    def x(self, value: int) -> None:
+        self.register['__x__'] = value
+
+    def reset(self) -> None:
+        super().reset()
+
+        self.x = 1
+        self.crt = [''] * self.IMAGE_HEIGHT
+
+    def step(self) -> bool:
+        if 0 < self.max_cycles <= self.clock_cycles:
+            return self.BREAK
+        return super().step()
+
+    def draw_pixel(self, cycle_count: int) -> None:
+        x: int = cycle_count % self.IMAGE_WIDTH
+        y: int = cycle_count // self.IMAGE_WIDTH
+        self.crt[y] += '#' if abs(x - self.x) <= 1 else '.'
+
+    def image(self) -> str:
+        return '\n'.join(self.crt)
+
+    def execute(self) -> int | None:
+        # Draw pixel during first clock cycle no matter what
+        self.draw_pixel(self.clock_cycles)
+
+        match self.opcode:
             case 'noop':
-                yield 'noop'
+                ...
             case 'addx':
-                yield 'noop'
-                yield instruction
+                # Make sure multi-cycle instructions don't get executed past the limit
+                if 0 < self.max_cycles <= self.clock_cycles + 1:
+                    return self.HALT
 
+                # Draw another pixel during second clock cycle
+                self.draw_pixel(self.clock_cycles + 1)
 
-def execute_program(program: list[str], max_cycles: int = 0) -> int:
-    x: int = 1
-    cycle_count: int = 0
-
-    for instruction in expanded_program(program):
-        x = execute_instruction(instruction, x)
-        cycle_count += 1
-        if cycle_count == max_cycles:
-            break
-
-    return x
-
-
-def render_crt(program: list[str]) -> str:
-    pixel_width: int = 40
-    pixel_height: int = 6
-    pixel_total: int = pixel_height * pixel_width
-
-    crt: list[str] = ['' for _ in range(pixel_total)]
-
-    x: int = 1
-    cycle_count: int = 0
-
-    for instruction in expanded_program(program):
-        pixel_pos: int = cycle_count % pixel_width
-        if abs(pixel_pos - x) <= 1:
-            crt[cycle_count] = '#'
-        else:
-            crt[cycle_count] = '.'
-
-        if (pixel_pos + 1) % pixel_width == 0:
-            crt[cycle_count] += '\n'
-
-        x = execute_instruction(instruction, x)
-        cycle_count += 1
-        if cycle_count == pixel_total:
-            break
-
-    return ''.join(crt)
+                v, = self.operands
+                self.x += v
 
 
 def parse(puzzle_input: str):
@@ -86,17 +75,24 @@ def parse(puzzle_input: str):
 
 
 def part1(data):
-    interesting_cycles: list[int] = list(range(20, 220 + 1, 40))
+    crt: CRT = CRT()
+    crt.load_memory(data)
 
-    signal_strengths: list[int] = [execute_program(data, c - 1) * c for c in interesting_cycles]
-
-    return sum(signal_strengths)
+    signal_strength: int = 0
+    for cycle_count in range(20, 220 + 1, 40):
+        crt.reset()
+        crt.max_cycles = cycle_count - 1
+        crt.run()
+        signal_strength += crt.x * cycle_count
+    return signal_strength
 
 
 def part2(data):
-    image: str = render_crt(data)
-    print('\n' + render_crt(data).replace('.', ' '))
-    return image
+    crt: CRT = CRT()
+    crt.load_memory(data)
+    crt.run()
+    print('\n' + crt.image().replace('.', ' ') + '\n')
+    return crt.image()
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
