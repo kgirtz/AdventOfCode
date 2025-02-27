@@ -1,21 +1,15 @@
 
-from computer import AbstractComputer
+from computer import AbstractComputer, SpecialRegister
 
 PART1_TEST_ANSWER = 5
 PART2_TEST_ANSWER = 8
 
 
 class GameConsole(AbstractComputer):
-    @property
-    def accumulator(self) -> int:
-        return self.register['acc']
-
-    @accumulator.setter
-    def accumulator(self, value: int) -> None:
-        self.register['acc'] = value
+    accumulator: SpecialRegister = SpecialRegister()
 
     def execute(self) -> None:
-        op: int = self.operands[0]
+        op, = self.operands
         match self.opcode:
             case 'acc':
                 self.accumulator += op
