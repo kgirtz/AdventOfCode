@@ -1,5 +1,5 @@
 
-from computer import AbstractComputer
+from computer import AbstractComputer, SpecialRegister
 
 PART1_TEST_ANSWER = 13140
 PART2_TEST_ANSWER = '##..##..##..##..##..##..##..##..##..##..\n' + \
@@ -16,6 +16,8 @@ class CRT(AbstractComputer):
     IMAGE_WIDTH: int = 40
     IMAGE_HEIGHT: int = 6
 
+    x: SpecialRegister = SpecialRegister()
+
     def __init__(self, max_cycles: int = -1) -> None:
         super().__init__()
 
@@ -23,14 +25,6 @@ class CRT(AbstractComputer):
         self.crt: list[str] = []
 
         self.reset()
-
-    @property
-    def x(self) -> int:
-        return self.register['__x__']
-
-    @x.setter
-    def x(self, value: int) -> None:
-        self.register['__x__'] = value
 
     def reset(self) -> None:
         super().reset()
