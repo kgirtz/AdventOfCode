@@ -3,9 +3,23 @@ import collections
 import typing
 
 
+class SpecialRegister:
+    def __set_name__(self, _, name: str) -> None:
+        self.name: str = name
+        self.key: str = f'__{name}__'
+
+    def __get__(self, computer, _=None) -> int:
+        if computer is None:
+            raise AttributeError(f'{self.name} has no class value')
+        return computer.register[self.key]
+
+    def __set__(self, computer, value: int) -> None:
+        computer.register[self.key] = value
+
+
 class AbstractComputer(abc.ABC):
     # Set a specific register as the program counter
-    IP_REGISTER: str | int = '__INSTRUCTION_POINTER__'
+    ip: SpecialRegister = SpecialRegister()
 
     # fetch/decode/execute return status codes
     SUCCESS: int = 0
@@ -40,15 +54,6 @@ class AbstractComputer(abc.ABC):
         # Initialize
         self.reset()
         self.clear_memory()
-    
-    @property
-    def ip(self) -> int:
-        """ Instruction Pointer """
-        return self.register[self.IP_REGISTER]
-    
-    @ip.setter
-    def ip(self, address: int) -> None:
-        self.register[self.IP_REGISTER] = address
     
     def reset(self) -> None:
         """ When overwriting in subclasses call super().reset() before setting new attributes. """
