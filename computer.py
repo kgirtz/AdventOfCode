@@ -147,13 +147,15 @@ class AbstractComputer(abc.ABC):
             self.ip = self.current_instruction_address()
             return self.BREAK
 
+        # Add before execute in case a jump modifies IP
+        self.addresses_executed.add(self.current_instruction_address())
+
         result: int = self.execute()
 
         # Update stats
         self.clock_cycles += self.current_instruction_clock_cycles()
         self.instruction_cycles += 1
         self.instruction_count[self.opcode] += 1
-        self.addresses_executed.add(self.current_instruction_address())
 
         return self.BREAK if result == self.HALT else self.CONTINUE
 
