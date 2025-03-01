@@ -175,6 +175,12 @@ class AbstractComputer(abc.ABC):
     def immediate_value(operand: str | int, base: int = 10) -> int:
         return int(operand, base)
 
+    def register_or_immediate_operand_value(self, operand: str | int, base: int = 10) -> int:
+        try:
+            return self.immediate_value(operand, base)
+        except ValueError:
+            return self.register[operand]
+
     def memory_operand(self, operand: str | int, base: int = 10) -> int:
         return self.read_memory(int(operand, base))
     
