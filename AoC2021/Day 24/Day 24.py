@@ -1,7 +1,6 @@
 import pathlib
 import sys
 import os
-import parse as scanf
 
 
 class ALU:
@@ -22,7 +21,7 @@ class ALU:
             self.var[dst] = int(input_str[0])
             return input_str[1:]
 
-        mnemonic, dst, op_str = tuple(scanf.parse('{} {} {}', instruction))
+        mnemonic, dst, op_str = instruction.split()
         if op_str[-1].isdigit():
             op = int(op_str)
         else:
