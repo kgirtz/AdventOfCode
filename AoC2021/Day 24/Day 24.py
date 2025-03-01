@@ -9,6 +9,7 @@ class ALU(AbstractComputer):
     def decode(self) -> int | None:
         self.instruction = typing.cast(str, self.instruction)
         self.opcode, *operands = self.instruction.split()
+
         if self.opcode == 'inp':
             if not self.input_available():
                 return self.HALT
@@ -21,20 +22,19 @@ class ALU(AbstractComputer):
         if self.opcode == 'inp':
             a, = self.operands
             self.register[a] = self.next_input()
-            return
-
-        a, b = self.operands
-        match self.opcode:
-            case 'add':
-                self.register[a] += b
-            case 'mul':
-                self.register[a] *= b
-            case 'div':
-                self.register[a] //= b
-            case 'mod':
-                self.register[a] %= b
-            case 'eql':
-                self.register[a] = int(self.register[a] == b)
+        else:
+            a, b = self.operands
+            match self.opcode:
+                case 'add':
+                    self.register[a] += b
+                case 'mul':
+                    self.register[a] *= b
+                case 'div':
+                    self.register[a] //= b
+                case 'mod':
+                    self.register[a] %= b
+                case 'eql':
+                    self.register[a] = int(self.register[a] == b)
 
 
 def parse(puzzle_input: str):
