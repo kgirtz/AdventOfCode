@@ -55,19 +55,17 @@ def part1(data):
                         for d6 in range(7, 0, -1):  # 1:7
                             for d7 in range(9, 2, -1):  # 3:9
                                 for d8 in range(4, 0, -1):  # 1:4
-                                    for d9 in range(9, 8, -1):  # 9
-                                        for d10 in range(1, 0, -1):  # 1
-                                            for d11 in range(9, 5, -1):  # 6:9
-                                                for d12 in range(9, 0, -1):  # 1:9
-                                                    for d13 in range(3, 0, -1):  # 1:3
-                                                        for d14 in range(9, 1, -1):  # 2:9
-                                                            model_num: list[int] = [d1, d2, d3, d4, d5, d6, d7, d8,
-                                                                                    d9, d10, d11, d12, d13, d14]
-                                                            unit.reset()
-                                                            unit.add_to_input_buffer(model_num)
-                                                            unit.run()
-                                                            if unit.register['z'] == 0:
-                                                                return int(''.join(str(n) for n in model_num))
+                                    for d11 in range(9, 5, -1):  # 6:9
+                                        for d12 in range(9, 0, -1):  # 1:9
+                                            for d13 in range(3, 0, -1):  # 1:3
+                                                for d14 in range(9, 1, -1):  # 2:9
+                                                    model_num: list[int] = [d1, d2, d3, d4, d5, d6, d7, d8,
+                                                                            9, 1, d11, d12, d13, d14]
+                                                    unit.reset()
+                                                    unit.add_to_input_buffer(model_num)
+                                                    unit.run()
+                                                    if unit.register['z'] == 0:
+                                                        return int(''.join(str(n) for n in model_num))
 
 
 def part2(data):
@@ -81,19 +79,17 @@ def part2(data):
                         for d6 in range(1, 8):  # 1:7
                             for d7 in range(3, 10):  # 3:9
                                 for d8 in range(1, 5):  # 1:4
-                                    for d9 in range(9, 10):  # 9
-                                        for d10 in range(1, 2):  # 1
-                                            for d11 in range(6, 10):  # 6:9
-                                                for d12 in range(1, 10):  # 1:9
-                                                    for d13 in range(1, 4):  # 1:3
-                                                        for d14 in range(2, 10):  # 2:9
-                                                            model_num: list[int] = [d1, d2, d3, d4, d5, d6, d7, d8,
-                                                                                    d9, d10, d11, d12, d13, d14]
-                                                            unit.reset()
-                                                            unit.add_to_input_buffer(model_num)
-                                                            unit.run()
-                                                            if unit.register['z'] == 0:
-                                                                return int(''.join(str(n) for n in model_num))
+                                    for d11 in range(6, 10):  # 6:9
+                                        for d12 in range(1, 10):  # 1:9
+                                            for d13 in range(1, 4):  # 1:3
+                                                for d14 in range(2, 10):  # 2:9
+                                                    model_num: list[int] = [d1, d2, d3, d4, d5, d6, d7, d8,
+                                                                            9, 1, d11, d12, d13, d14]
+                                                    unit.reset()
+                                                    unit.add_to_input_buffer(model_num)
+                                                    unit.run()
+                                                    if unit.register['z'] == 0:
+                                                        return int(''.join(str(n) for n in model_num))
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
