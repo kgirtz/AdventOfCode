@@ -203,7 +203,7 @@ class AbstractComputer(abc.ABC):
         """ Overwrite to interpret opcode and operands for each instruction as immediate, register, memory, etc.
             Default opcode behavior: get first symbol of space-separated string.
             Default operand behavior: convert all string operands into immediate base-10 integer values.
-            If program waits for I/O, return HALT_CODE after checking opcode and buffer
+            If program waits for I/O, return HALT after checking opcode and buffer
         """
         self.instruction = typing.cast(str, self.instruction)
         self.opcode, *operands = self.instruction.split()
