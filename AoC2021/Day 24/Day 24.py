@@ -6,9 +6,6 @@ PART2_TEST_ANSWER = None
 
 
 class ALU(AbstractComputer):
-    def operand_value(self, op: str) -> int:
-        return self.register[op] if op.isalpha() else self.immediate_value(op)
-
     def decode(self) -> int | None:
         self.instruction = typing.cast(str, self.instruction)
         self.opcode, *operands = self.instruction.split()
@@ -18,7 +15,7 @@ class ALU(AbstractComputer):
             self.operands = operands
         else:
             a, b = operands
-            self.operands = (a, self.operand_value(b))
+            self.operands = (a, self.register_or_immediate_operand_value(b))
 
     def execute(self) -> None:
         if self.opcode == 'inp':
