@@ -34,7 +34,7 @@ class ALU(AbstractComputer):
                 case 'mod':
                     self.register[a] %= b
                 case 'eql':
-                    self.register[a] = int(self.register[a] == b)
+                    self.register[a] = 1 if self.register[a] == b else 0
 
 
 def parse(puzzle_input: str):
