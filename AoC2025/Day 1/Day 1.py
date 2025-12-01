@@ -1,18 +1,43 @@
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 3
+PART2_TEST_ANSWER = 6
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return [(line[0], int(line[1:])) for line in puzzle_input.split('\n')]
 
 
 def part1(data):
-    return None
+    dial: int = 50
+
+    password: int = 0
+    for direction, distance in data:
+        if direction == 'L':
+            distance = -distance
+
+        dial = (dial + distance) % 100
+
+        if dial == 0:
+            password += 1
+
+    return password
 
 
 def part2(data):
-    return None
+    dial: int = 50
+
+    password: int = 0
+    for direction, distance in data:
+        if direction == 'L':
+            if 0 < dial <= distance:
+                password += 1
+            distance = -distance
+
+        password += abs(dial + distance) // 100
+
+        dial = (dial + distance) % 100
+
+    return password
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
