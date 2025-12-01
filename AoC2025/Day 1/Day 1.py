@@ -7,35 +7,39 @@ def parse(puzzle_input: str):
     return [(line[0], int(line[1:])) for line in puzzle_input.split('\n')]
 
 
+def rotate(dial: int, direction: str, distance: int) -> int:
+    if direction == 'L':
+        distance = -distance
+    return (dial + distance) % 100
+
+
+def zero_crossings(dial: int, direction: str, distance: int) -> int:
+    if direction == 'L':
+        if 0 < dial <= distance:
+            distance += 100
+        distance = -distance
+
+    return abs(dial + distance) // 100
+
+
 def part1(data):
-    dial: int = 50
-
     password: int = 0
+
+    dial: int = 50
     for direction, distance in data:
-        if direction == 'L':
-            distance = -distance
-
-        dial = (dial + distance) % 100
-
-        if dial == 0:
-            password += 1
+        dial = rotate(dial, direction, distance)
+        password += (dial == 0)
 
     return password
 
 
 def part2(data):
-    dial: int = 50
-
     password: int = 0
+
+    dial: int = 50
     for direction, distance in data:
-        if direction == 'L':
-            if 0 < dial <= distance:
-                password += 1
-            distance = -distance
-
-        password += abs(dial + distance) // 100
-
-        dial = (dial + distance) % 100
+        password += zero_crossings(dial, direction, distance)
+        dial = rotate(dial, direction, distance)
 
     return password
 
