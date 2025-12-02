@@ -4,30 +4,29 @@ PART2_TEST_ANSWER = 4174379265
 
 
 def parse(puzzle_input: str):
-    ranges: list[tuple[int, ...]] = []
+    ranges: list[tuple[int, int]] = []
     for r in puzzle_input.split(','):
-        ranges.append(tuple(int(n) for n in r.split('-')))
+        r = r.split('-')
+        ranges.append((int(r[0]), int(r[1])))
     return ranges
 
 
-def is_invalid(num: int) -> bool:
-    num_str: str = str(num)
-    if len(num_str) % 2 == 1:
+def is_invalid(id_int: int) -> bool:
+    id_str: str = str(id_int)
+    if len(id_str) % 2 == 1:
         return False
 
-    middle: int = len(num_str) // 2
-    return num_str[:middle] == num_str[middle:]
+    middle: int = len(id_str) // 2
+    return id_str[:middle] == id_str[middle:]
 
 
-def is_invalid_part_2(num: int) -> bool:
-    num_str: str = str(num)
-    middle: int = len(num_str) // 2
+def is_invalid_2(id_int: int) -> bool:
+    id_str: str = str(id_int)
+    middle: int = len(id_str) // 2
 
-    for sub_len in range(1, middle + 1):
-        for i in range(sub_len, len(num_str), sub_len):
-            if num_str[i:i+sub_len] != num_str[:sub_len]:
-                break
-        else:
+    for i in range(1, middle + 1):
+        pattern: str = id_str[:i]
+        if all(id_str[j:j+i] == pattern for j in range(i, len(id_str), i)):
             return True
 
     return False
@@ -35,7 +34,6 @@ def is_invalid_part_2(num: int) -> bool:
 
 def part1(data):
     invalid_sum: int = 0
-
     for first, last in data:
         for i in range(first, last + 1):
             if is_invalid(i):
@@ -46,10 +44,9 @@ def part1(data):
 
 def part2(data):
     invalid_sum: int = 0
-
     for first, last in data:
         for i in range(first, last + 1):
-            if is_invalid_part_2(i):
+            if is_invalid_2(i):
                 invalid_sum += i
 
     return invalid_sum
