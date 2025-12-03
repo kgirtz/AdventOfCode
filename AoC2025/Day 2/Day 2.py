@@ -11,25 +11,21 @@ def parse(puzzle_input: str):
     return ranges
 
 
-def is_invalid(id_int: int) -> bool:
-    id_str: str = str(id_int)
-    if len(id_str) % 2 == 1:
+def is_invalid(id_: int | str) -> bool:
+    id_ = str(id_)
+    if len(id_) % 2 == 1:
         return False
 
-    middle: int = len(id_str) // 2
-    return id_str[:middle] == id_str[middle:]
+    middle: int = len(id_) // 2
+    return id_[:middle] == id_[middle:]
 
 
-def is_invalid_2(id_int: int) -> bool:
-    id_str: str = str(id_int)
-    middle: int = len(id_str) // 2
+def is_invalid_2(id_: int | str) -> bool:
+    id_ = str(id_)
+    middle: int = len(id_) // 2
 
-    for i in range(1, middle + 1):
-        pattern: str = id_str[:i]
-        if all(id_str[j:j+i] == pattern for j in range(i, len(id_str), i)):
-            return True
-
-    return False
+    return any(id_ == id_[:sub_len] * (len(id_) // sub_len)
+               for sub_len in range(1, middle + 1))
 
 
 def part1(data):
