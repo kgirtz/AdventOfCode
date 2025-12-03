@@ -12,8 +12,8 @@ def max_joltage(bank: str, num_batteries: int) -> int:
     left: int = 0
     for d in range(num_batteries):
         right: int = len(bank) - num_batteries + d + 1
-        digits.append(max(set(bank[left:right])))
-        left = bank.find(digits[-1], left) + 1
+        digits.append(max(bank[left:right]))
+        left = bank.index(digits[-1], left) + 1
 
     return int(''.join(digits))
 
