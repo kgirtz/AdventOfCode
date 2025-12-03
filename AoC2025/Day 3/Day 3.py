@@ -7,18 +7,11 @@ def parse(puzzle_input: str):
     return [line.strip() for line in puzzle_input.split('\n')]
 
 
-def max_joltage(bank: str) -> int:
-    first_digit: str = max(set(bank[:-1]))
-    first_pos: int = bank.find(first_digit)
-    second_digit: int = int(max(set(bank[first_pos + 1:])))
-    return 10 * int(first_digit) + second_digit
-
-
-def max_joltage_2(bank: str) -> int:
+def max_joltage(bank: str, num_batteries: int) -> int:
     digits: list[str] = []
     left: int = 0
-    for d in range(12):
-        right: int = len(bank) - 11 + d
+    for d in range(num_batteries):
+        right: int = len(bank) - num_batteries + d + 1
         digits.append(max(set(bank[left:right])))
         left = bank.find(digits[-1], left) + 1
 
@@ -26,11 +19,11 @@ def max_joltage_2(bank: str) -> int:
 
 
 def part1(data):
-    return sum(max_joltage(bank) for bank in data)
+    return sum(max_joltage(bank, 2) for bank in data)
 
 
 def part2(data):
-    return sum(max_joltage_2(bank) for bank in data)
+    return sum(max_joltage(bank, 12) for bank in data)
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
