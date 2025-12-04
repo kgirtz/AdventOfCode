@@ -1,18 +1,43 @@
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 13
+PART2_TEST_ANSWER = 43
+
+from space import Space
+from xypair import XYpair
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.split('\n')
 
 
 def part1(data):
-    return None
+    rolls: set[XYpair] = Space(data).items['@']
+
+    accessible: int = 0
+    for roll in rolls:
+        if len(roll.neighbors(include_corners=True) & rolls) < 4:
+            accessible += 1
+
+    return accessible
 
 
 def part2(data):
-    return None
+    rolls: set[XYpair] = Space(data).items['@']
+
+    accessible: int = 0
+    while True:
+        removable: set[XYpair] = set()
+        for roll in rolls:
+            if len(roll.neighbors(include_corners=True) & rolls) < 4:
+                removable.add(roll)
+
+        if not removable:
+            break
+
+        accessible += len(removable)
+        rolls -= removable
+
+    return accessible
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
