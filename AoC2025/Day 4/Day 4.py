@@ -10,15 +10,14 @@ def parse(puzzle_input: str):
     return puzzle_input.split('\n')
 
 
+def is_accessible(roll: XYpair, all_rolls: set[XYpair]) -> bool:
+    return len(roll.neighbors(include_corners=True) & all_rolls) < 4
+
+
 def part1(data):
     rolls: set[XYpair] = Space(data).items['@']
 
-    accessible: int = 0
-    for roll in rolls:
-        if len(roll.neighbors(include_corners=True) & rolls) < 4:
-            accessible += 1
-
-    return accessible
+    return sum(is_accessible(roll, rolls) for roll in rolls)
 
 
 def part2(data):
@@ -26,10 +25,7 @@ def part2(data):
 
     accessible: int = 0
     while True:
-        removable: set[XYpair] = set()
-        for roll in rolls:
-            if len(roll.neighbors(include_corners=True) & rolls) < 4:
-                removable.add(roll)
+        removable: set[XYpair] = {roll for roll in rolls if is_accessible(roll, rolls)}
 
         if not removable:
             break
