@@ -95,7 +95,7 @@ class Space:
     def initial_position(self, item: str) -> xypair.XYpair:
         pts: list[xypair.XYpair] = list(self.items[item])
         if len(pts) > 1:
-            raise ValueError(f"more than one {item} found")
+            raise ValueError(f'more than one {item} found')
         return pts.pop()
 
     def blockers(self, *, exclude: collections.abc.Container[str] = tuple()) -> set[xypair.XYpair]:
