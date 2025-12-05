@@ -36,7 +36,8 @@ def part2(data):
     keep_merging: bool = True
     while keep_merging:
         keep_merging = False
-        temp_merged: set[tuple[int, int]] = set()
+
+        temp: set[tuple[int, int]] = set()
         while fresh:
             a: tuple[int, int] = fresh.pop()
             for b in list(fresh):
@@ -44,8 +45,8 @@ def part2(data):
                     keep_merging = True
                     a = (min(a[0], b[0]), max(a[1], b[1]))
                     fresh.remove(b)
-            temp_merged.add(a)
-        fresh = temp_merged
+            temp.add(a)
+        fresh = temp
 
     return sum((id_range[1] - id_range[0] + 1) for id_range in fresh)
 
