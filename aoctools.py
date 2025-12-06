@@ -59,3 +59,9 @@ def quadratic_roots_int(a: int, b: int, c: int) -> tuple[int | None, ...]:
         integer_roots[1] = x
 
     return tuple(integer_roots)
+
+
+def pad_to_equal_length(str_list: collections.abc.Sequence[str], *, padding: str = ' ') -> list[str]:
+    """ Pad end of each string with given character until all strings have equal length. """
+    max_len: int = max(len(s) for s in str_list)
+    return [s + (padding * (max_len - len(s))) for s in str_list]
