@@ -1,6 +1,9 @@
 import math
 import typing
 import collections.abc
+import functools
+import operator
+
 
 _T: typing.TypeVar = typing.TypeVar('_T', bound=collections.abc.Hashable)
 
@@ -65,3 +68,7 @@ def pad_to_equal_length(str_list: collections.abc.Sequence[str], *, padding: str
     """ Pad end of each string with given character until all strings have equal length. """
     max_len: int = max(len(s) for s in str_list)
     return [s + (padding * (max_len - len(s))) for s in str_list]
+
+
+def product(iterable: collections.abc.Iterable[int], /, start: int = 1) -> int:
+    return functools.reduce(operator.mul, iterable, start)
