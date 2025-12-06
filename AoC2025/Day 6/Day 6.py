@@ -1,18 +1,60 @@
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+
+PART1_TEST_ANSWER = 4277556
+PART2_TEST_ANSWER = 3263827
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    lines: list[str] = puzzle_input.split('\n')
+    max_len: int = max(len(line) for line in lines)
+    lines = [line + (' ' * (max_len - len(line))) for line in lines]
+    return lines
 
 
 def part1(data):
-    return None
+    numbers: list[list[int]] = [[int(n) for n in line.split()] for line in data[:-1]]
+    operators: list[str] = data[-1].split()
+
+    total: int = 0
+    for i, op in enumerate(operators):
+        if op == '+':
+            total += sum(nums[i] for nums in numbers)
+        elif op == '*':
+            product: int = numbers[0][i]
+            for nums in numbers[1:]:
+                product *= nums[i]
+            total += product
+
+    return total
 
 
 def part2(data):
-    return None
+    numbers: list[list[str]] = data[:-1]
+    operators: list[str] = data[-1]
+
+    total: int = 0
+    pos: int = 0
+    while pos < len(operators):
+        op: str = operators[pos]
+        next_space: int = pos + 1
+        while next_space < len(operators) and (next_space + 1 == len(operators) or operators[next_space + 1] == ' '):
+            next_space += 1
+
+        nums: list[int] = []
+        for i in range(pos, next_space):
+            nums.append(int(''.join(num_line[i] for num_line in numbers)))
+
+        if op == '+':
+            total += sum(nums)
+        elif op == '*':
+            product: int = nums[0]
+            for n in nums[1:]:
+                product *= n
+            total += product
+
+        pos = next_space + 1
+
+    return total
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
