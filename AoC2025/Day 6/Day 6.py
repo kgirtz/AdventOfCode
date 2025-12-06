@@ -1,14 +1,12 @@
 
+from aoctools import pad_to_equal_length, product
 
 PART1_TEST_ANSWER = 4277556
 PART2_TEST_ANSWER = 3263827
 
 
 def parse(puzzle_input: str):
-    lines: list[str] = puzzle_input.split('\n')
-    max_len: int = max(len(line) for line in lines)
-    lines = [line + (' ' * (max_len - len(line))) for line in lines]
-    return lines
+    return pad_to_equal_length(puzzle_input.split('\n'))
 
 
 def part1(data):
@@ -20,10 +18,7 @@ def part1(data):
         if op == '+':
             total += sum(nums[i] for nums in numbers)
         elif op == '*':
-            product: int = numbers[0][i]
-            for nums in numbers[1:]:
-                product *= nums[i]
-            total += product
+            total += product(nums[i] for nums in numbers)
 
     return total
 
@@ -40,17 +35,12 @@ def part2(data):
         while next_space < len(operators) and (next_space + 1 == len(operators) or operators[next_space + 1] == ' '):
             next_space += 1
 
-        nums: list[int] = []
-        for i in range(pos, next_space):
-            nums.append(int(''.join(num_line[i] for num_line in numbers)))
+        nums: list[int] = [int(''.join(num_line[i] for num_line in numbers)) for i in range(pos, next_space)]
 
         if op == '+':
             total += sum(nums)
         elif op == '*':
-            product: int = nums[0]
-            for n in nums[1:]:
-                product *= n
-            total += product
+            total += product(nums)
 
         pos = next_space + 1
 
