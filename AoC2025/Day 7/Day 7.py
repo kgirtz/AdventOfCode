@@ -1,18 +1,63 @@
+import collections.abc
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+from space import Space
+from xypair import XYpair
+
+PART1_TEST_ANSWER = 21
+PART2_TEST_ANSWER = 40
+
+
+class TachyonManifold(Space):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.entry: XYpair = self.items['S'].pop()
+        self.splitters: set[XYpair] = self.items['^']
+
+    def count_splits(self, beams: collections.abc.Iterable[XYpair]) -> int:
+        return sum((beam.down() in self.splitters) for beam in beams)
+
+    def propagate_downward(self, beams: collections.abc.Iterable[XYpair]) -> set[XYpair]:
+        new_beams: set[XYpair] = set()
+        for beam in beams:
+            if beam.down() in self.splitters:
+                new_beams |= {beam.down_left(), beam.down_right()}
+            else:
+                new_beams.add(beam.down())
+        return new_beams
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    return puzzle_input.split('\n')
 
 
 def part1(data):
-    return None
+    diagram: TachyonManifold = TachyonManifold(data)
+
+    split_count: int = 0
+    beams: set[XYpair] = {diagram.entry}
+    for _ in range(diagram.height - 1):
+        split_count += diagram.count_splits(beams)
+        beams = diagram.propagate_downward(beams)
+
+    return split_count
 
 
 def part2(data):
-    return None
+    diagram: TachyonManifold = TachyonManifold(data)
+
+    beams: dict[XYpair, int] = {diagram.entry: 1}
+    for _ in range(diagram.height - 1):
+        new_beams: dict[XYpair, int] = {}
+        for b in diagram.propagate_downward(beams.keys()):
+            new_beams[b] = beams.get(b.up(), 0)
+            if b.left() in diagram.splitters:
+                new_beams[b] += beams.get(b.up_left(), 0)
+            if b.right() in diagram.splitters:
+                new_beams[b] += beams.get(b.up_right(), 0)
+        beams = new_beams
+
+    return sum(beams.values())
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
