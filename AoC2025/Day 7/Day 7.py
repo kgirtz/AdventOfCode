@@ -17,7 +17,7 @@ class TachyonManifold(Space):
     def count_splits(self, beams: collections.abc.Iterable[XYpair]) -> int:
         return sum((beam.down() in self.splitters) for beam in beams)
 
-    def propagate_downward(self, beams: collections.abc.Iterable[XYpair]) -> set[XYpair]:
+    def propagate_beams_downward(self, beams: collections.abc.Iterable[XYpair]) -> set[XYpair]:
         new_beams: set[XYpair] = set()
         for beam in beams:
             if beam.down() in self.splitters:
@@ -25,6 +25,16 @@ class TachyonManifold(Space):
             else:
                 new_beams.add(beam.down())
         return new_beams
+
+    def propagate_timelines_downward(self, timelines: collections.abc.Mapping[XYpair, int]) -> dict[XYpair, int]:
+        new_timelines: dict[XYpair, int] = {}
+        for b in self.propagate_beams_downward(timelines.keys()):
+            new_timelines[b] = timelines.get(b.up(), 0)
+            if b.left() in self.splitters:
+                new_timelines[b] += timelines.get(b.up_left(), 0)
+            if b.right() in self.splitters:
+                new_timelines[b] += timelines.get(b.up_right(), 0)
+        return new_timelines
 
 
 def parse(puzzle_input: str):
@@ -38,7 +48,7 @@ def part1(data):
     beams: set[XYpair] = {diagram.entry}
     for _ in range(diagram.height - 1):
         split_count += diagram.count_splits(beams)
-        beams = diagram.propagate_downward(beams)
+        beams = diagram.propagate_beams_downward(beams)
 
     return split_count
 
@@ -46,18 +56,11 @@ def part1(data):
 def part2(data):
     diagram: TachyonManifold = TachyonManifold(data)
 
-    beams: dict[XYpair, int] = {diagram.entry: 1}
+    timelines: dict[XYpair, int] = {diagram.entry: 1}
     for _ in range(diagram.height - 1):
-        new_beams: dict[XYpair, int] = {}
-        for b in diagram.propagate_downward(beams.keys()):
-            new_beams[b] = beams.get(b.up(), 0)
-            if b.left() in diagram.splitters:
-                new_beams[b] += beams.get(b.up_left(), 0)
-            if b.right() in diagram.splitters:
-                new_beams[b] += beams.get(b.up_right(), 0)
-        beams = new_beams
+        timelines = diagram.propagate_timelines_downward(timelines)
 
-    return sum(beams.values())
+    return sum(timelines.values())
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
