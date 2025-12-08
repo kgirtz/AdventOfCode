@@ -7,7 +7,7 @@ from xyztrio import XYZtrio
 
 
 PART1_TEST_ANSWER = None  # 40
-PART2_TEST_ANSWER = 25272  # 25272
+PART2_TEST_ANSWER = 25272
 
 
 XYZPairHeap: typing.TypeAlias = list[tuple[float, XYZtrio, XYZtrio]]
@@ -16,7 +16,7 @@ XYZPairHeap: typing.TypeAlias = list[tuple[float, XYZtrio, XYZtrio]]
 def parse(puzzle_input: str):
     trios: list[XYZtrio] = []
     for line in puzzle_input.split('\n'):
-        x, y, z = tuple(int(c) for c in line.split(','))
+        x, y, z = [int(c) for c in line.split(',')]
         trios.append(XYZtrio(x, y, z))
     return trios
 
@@ -41,16 +41,15 @@ def connect_boxes(box1: XYZtrio, box2: XYZtrio, circuits: MutableSequence[set[XY
     num1: int = circuit_num(box1, circuits)
     num2: int = circuit_num(box2, circuits)
 
-    if num1 == num2:
-        if num1 == -1:
-            circuits.append(connection)
-        else:
-            circuits[num1].update(connection)
-    elif num1 == -1:
+    if num1 == num2 == -1:  # Neither found
+        circuits.append(connection)
+    elif num1 == num2:  # Both found in same circuit
+        circuits[num1].update(connection)
+    elif num1 == -1:  # Only found box2
         circuits[num2].add(box1)
-    elif num2 == -1:
+    elif num2 == -1:  # Only found box1
         circuits[num1].add(box2)
-    else:
+    else:  # Both found in different circuits
         circuits[num1].update(circuits[num2])
         circuits.pop(num2)
 
@@ -71,6 +70,8 @@ def part1(data):
 
 def part2(data):
     distance_heap: XYZPairHeap = build_distance_heap(data)
+
+    box1, box2 = None, None  # Avoid 'uninitialized' warning
 
     circuits: list[set[XYZtrio]] = []
     while not circuits or len(circuits[0]) < len(data):
