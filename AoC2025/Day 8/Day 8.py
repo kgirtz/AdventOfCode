@@ -1,18 +1,83 @@
+import heapq
+import itertools
+import typing
+from collections.abc import Sequence, MutableSequence, Container, Iterable
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+from xyztrio import XYZtrio
+
+
+PART1_TEST_ANSWER = None  # 40
+PART2_TEST_ANSWER = 25272  # 25272
+
+
+XYZPairHeap: typing.TypeAlias = list[tuple[float, XYZtrio, XYZtrio]]
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    trios: list[XYZtrio] = []
+    for line in puzzle_input.split('\n'):
+        x, y, z = tuple(int(c) for c in line.split(','))
+        trios.append(XYZtrio(x, y, z))
+    return trios
+
+
+def build_distance_heap(boxes: Iterable[XYZtrio]) -> XYZPairHeap:
+    distance_heap: XYZPairHeap = []
+    for box1, box2 in itertools.combinations(boxes, 2):
+        heapq.heappush(distance_heap, (box1.distance(box2), box1, box2))
+    return distance_heap
+
+
+def circuit_num(box: XYZtrio, circuits: Sequence[Container[XYZtrio]]) -> int:
+    for i, circuit in enumerate(circuits):
+        if box in circuit:
+            return i
+    return -1
+
+
+def connect_boxes(box1: XYZtrio, box2: XYZtrio, circuits: MutableSequence[set[XYZtrio]]) -> None:
+    connection: set[XYZtrio] = {box1, box2}
+
+    num1: int = circuit_num(box1, circuits)
+    num2: int = circuit_num(box2, circuits)
+
+    if num1 == num2:
+        if num1 == -1:
+            circuits.append(connection)
+        else:
+            circuits[num1].update(connection)
+    elif num1 == -1:
+        circuits[num2].add(box1)
+    elif num2 == -1:
+        circuits[num1].add(box2)
+    else:
+        circuits[num1].update(circuits[num2])
+        circuits.pop(num2)
 
 
 def part1(data):
-    return None
+    max_connections: int = 1000  # test = 10, input = 1000
+
+    distance_heap: XYZPairHeap = build_distance_heap(data)
+
+    circuits: list[set[XYZtrio]] = []
+    for _ in range(max_connections):
+        _, box1, box2 = heapq.heappop(distance_heap)
+        connect_boxes(box1, box2, circuits)
+
+    sizes: list[int] = sorted((len(circuit) for circuit in circuits), reverse=True)
+    return sizes[0] * sizes[1] * sizes[2]
 
 
 def part2(data):
-    return None
+    distance_heap: XYZPairHeap = build_distance_heap(data)
+
+    circuits: list[set[XYZtrio]] = []
+    while not circuits or len(circuits[0]) < len(data):
+        _, box1, box2 = heapq.heappop(distance_heap)
+        connect_boxes(box1, box2, circuits)
+
+    return box1.x * box2.x
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
