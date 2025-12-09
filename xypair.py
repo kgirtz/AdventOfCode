@@ -69,11 +69,11 @@ class XYpair(typing.NamedTuple):
         return self.y > pt.y
 
     @accept_tuple_method
-    def same_column(self, pt: typing.Self) -> bool:
+    def in_same_column(self, pt: typing.Self) -> bool:
         return self.x == pt.x
 
     @accept_tuple_method
-    def same_row(self, pt: typing.Self) -> bool:
+    def in_same_row(self, pt: typing.Self) -> bool:
         return self.y == pt.y
 
     def adjacent(self, pt: XYtuple, *, include_corners: bool = False) -> bool:
@@ -117,6 +117,14 @@ class XYpair(typing.NamedTuple):
     @accept_tuple_method
     def distance(self, start: typing.Self) -> float:
         return math.hypot(self.x - start.x, self.y - start.y)
+
+    @accept_tuple_method
+    def x_distance(self, start: typing.Self) -> int:
+        return abs(self.x - start.x)
+
+    @accept_tuple_method
+    def y_distance(self, start: typing.Self) -> int:
+        return abs(self.y - start.y)
 
     @accept_tuple_method
     def manhattan_distance(self, start: typing.Self) -> int:
