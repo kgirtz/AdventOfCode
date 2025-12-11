@@ -1,18 +1,41 @@
+from collections.abc import Iterable, Mapping
 
-PART1_TEST_ANSWER = None
-PART2_TEST_ANSWER = None
+PART1_TEST_ANSWER = 5
+PART2_TEST_ANSWER = 2
 
 
 def parse(puzzle_input: str):
-    return [line for line in puzzle_input.split('\n')]
+    devices: dict[str, set[str]] = {}
+    for line in puzzle_input.split('\n'):
+        k, v_str = line.split(':')
+        v: set[str] = set(v_str.strip().split())
+        devices[k.strip()] = v
+    return devices
+
+
+def all_paths_between(start: str, end: str, devices: Mapping[str, Iterable[str]], *, must_pass: Iterable[str] = tuple()) -> list[list[str]]:
+    complete_paths: list[list[str]] = []
+    partial_paths: list[list[str]] = [[start]]
+    while partial_paths:
+        new_partials: list[list[str]] = []
+        for p in partial_paths:
+            for next_device in devices[p[-1]]:
+                new_p: list[str] = p + [next_device]
+                if next_device == end:
+                    if all(d in new_p for d in must_pass):
+                        complete_paths.append(new_p)
+                elif next_device not in p:
+                    new_partials.append(new_p)
+        partial_paths = new_partials
+    return complete_paths
 
 
 def part1(data):
-    return None
+    return len(all_paths_between('you', 'out', data))
 
 
 def part2(data):
-    return None
+    return len(all_paths_between('svr', 'out', data, must_pass=('fft', 'dac')))
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
