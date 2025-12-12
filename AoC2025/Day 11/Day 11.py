@@ -1,4 +1,6 @@
-from collections.abc import Iterable, Mapping
+import collections
+import functools
+from collections.abc import Mapping, Iterable
 
 PART1_TEST_ANSWER = 5
 PART2_TEST_ANSWER = 2
@@ -13,29 +15,78 @@ def parse(puzzle_input: str):
     return devices
 
 
-def all_paths_between(start: str, end: str, devices: Mapping[str, Iterable[str]], *, must_pass: Iterable[str] = tuple()) -> list[list[str]]:
-    complete_paths: list[list[str]] = []
-    partial_paths: list[list[str]] = [[start]]
-    while partial_paths:
-        new_partials: list[list[str]] = []
-        for p in partial_paths:
-            for next_device in devices[p[-1]]:
-                new_p: list[str] = p + [next_device]
-                if next_device == end:
-                    if all(d in new_p for d in must_pass):
-                        complete_paths.append(new_p)
-                elif next_device not in p:
-                    new_partials.append(new_p)
-        partial_paths = new_partials
-    return complete_paths
+class ServerRack:
+    def __init__(self, devices: Mapping[str, Iterable[str]]) -> None:
+        self.outputs: dict[str, set[str]] = {k: set(v) for k, v in devices.items()}
+
+        # Build source dictionary
+        self.inputs: dict[str, set[str]] = collections.defaultdict(set)
+        for k, v in self.outputs.items():
+            for device in v:
+                self.inputs[device].add(k)
+
+    @functools.cache
+    def ancestors(self, device: str) -> set[str]:
+        all_ancestors: set[str] = set()
+        for d, outputs in self.outputs.items():
+            if device in outputs and d not in all_ancestors:
+                all_ancestors.add(d)
+                all_ancestors.update(self.ancestors(d))
+        return all_ancestors
+
+    def all_paths_between(self, start: str, end: str, *, avoid: Iterable[str] = tuple()) -> list[list[str]]:
+        avoid = set(avoid)
+        if end != 'out':
+            avoid |= self.outputs.keys() - self.ancestors(end)
+
+        full_paths: list[list[str]] = []
+        partial_paths: list[list[str]] = [[start]]
+        while partial_paths:
+            new_partials: list[list[str]] = []
+            for p in partial_paths:
+                for next_device in self.outputs[p[-1]]:
+                    if next_device == end:
+                        full_paths.append(p + [next_device])
+                    elif next_device in self.outputs and next_device not in avoid:
+                        new_partials.append(p + [next_device])
+            partial_paths = new_partials
+        return full_paths
+
+    @functools.cache
+    def unique_path_count(self, start: str, end: str, *, avoid: tuple[str, ...] = tuple()) -> int:
+        if start == end:
+            return 1
+
+        num_paths: int = 0
+        for source in self.inputs[end]:
+            if source not in avoid:
+                num_paths += self.unique_path_count(start, source, avoid=avoid)
+        return num_paths
 
 
 def part1(data):
-    return len(all_paths_between('you', 'out', data))
+    # return len(ServerRack(data).all_paths_between('you', 'out'))
+    return ServerRack(data).unique_path_count('you', 'out')
 
 
 def part2(data):
-    return len(all_paths_between('svr', 'out', data, must_pass=('fft', 'dac')))
+    rack: ServerRack = ServerRack(data)
+
+    # svr_fft: int = len(rack.all_paths_between('svr', 'fft', avoid=['dac']))
+    # svr_dac: int = len(rack.all_paths_between('svr', 'dac', avoid=['fft']))
+    # dac_fft: int = len(rack.all_paths_between('dac', 'fft'))
+    # fft_dac: int = len(rack.all_paths_between('fft', 'dac'))
+    # fft_out: int = len(rack.all_paths_between('fft', 'out', avoid=['dac']))
+    # dac_out: int = len(rack.all_paths_between('dac', 'out', avoid=['fft']))
+
+    svr_fft: int = rack.unique_path_count('svr', 'fft', avoid=('dac',))
+    svr_dac: int = rack.unique_path_count('svr', 'dac', avoid=('fft',))
+    dac_fft: int = rack.unique_path_count('dac', 'fft')
+    fft_dac: int = rack.unique_path_count('fft', 'dac')
+    fft_out: int = rack.unique_path_count('fft', 'out', avoid=('dac',))
+    dac_out: int = rack.unique_path_count('dac', 'out', avoid=('fft',))
+
+    return svr_fft * fft_dac * dac_out + svr_dac * dac_fft * fft_out
 
 
 # ------------- DO NOT MODIFY BELOW THIS LINE ------------- #
